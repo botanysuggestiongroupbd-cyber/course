@@ -771,6 +771,7 @@
             width: 100%;
             aspect-ratio: 16/9;
             background-color: #000;
+            position: relative;
         }
 
         .view-modal-video iframe {
@@ -795,6 +796,46 @@
         .badge-category {
             background-color: var(--gray-color);
             color: white;
+        }
+
+        /* Unmute button */
+        .unmute-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 10;
+            font-weight: 600;
+            transition: background-color 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .unmute-button:hover {
+            background-color: rgba(0, 0, 0, 0.9);
+        }
+
+        .sound-message {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            max-width: 300px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         /* Tablet and larger mobile */
@@ -897,6 +938,16 @@
             
             .video-grid {
                 grid-template-columns: 1fr;
+            }
+            
+            .unmute-button {
+                padding: 8px 12px;
+                font-size: 0.8rem;
+            }
+            
+            .sound-message {
+                padding: 8px 12px;
+                font-size: 0.8rem;
             }
         }
     </style>
@@ -1101,7 +1152,7 @@
                 </div>
                 <div class="view-modal-content">
                     <div class="view-modal-video" id="videoPlayerContent">
-                        <!-- Video will be loaded here -->
+                        <!-- Video and unmute button will be loaded here -->
                     </div>
                     <div class="view-modal-info">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -1213,6 +1264,11 @@
         let userData = null;
         let videoSnapshotUnsubscribe = null;
         let allVideos = [];
+        let currentYouTubePlayer = null;
+
+        // YouTube Player State
+        let youtubePlayer = null;
+        let currentVideoId = null;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
@@ -1329,6 +1385,10 @@
                 videoPlayerModal.classList.add('hidden');
                 // Clear video content to stop playback
                 videoPlayerContent.innerHTML = '';
+                if (youtubePlayer) {
+                    youtubePlayer.destroy();
+                    youtubePlayer = null;
+                }
             });
             
             // Close modal when clicking outside
@@ -1342,6 +1402,10 @@
                 if (e.target === videoPlayerModal) {
                     videoPlayerModal.classList.add('hidden');
                     videoPlayerContent.innerHTML = '';
+                    if (youtubePlayer) {
+                        youtubePlayer.destroy();
+                        youtubePlayer = null;
+                    }
                 }
             });
             
@@ -2013,7 +2077,7 @@
             return null;
         }
 
-        // FIXED FUNCTION: Play video in modal - NOW WORKING 100%
+        // FIXED FUNCTION: Play video in modal - WITH SOUND WORKING
         async function playUserVideo(video) {
             try {
                 videoPlayerTitle.textContent = video.title || 'Untitled Video';
@@ -2031,47 +2095,100 @@
                 const youtubeId = extractYouTubeId(video.embedCode);
                 
                 if (youtubeId) {
-                    // Create a clean, working YouTube embed iframe with proper parameters
-                    const embedHtml = `
-                        <iframe 
-                            src="https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&rel=0&modestbranding=1&mute=1" 
-                            frameborder="0" 
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                            allowfullscreen
-                            referrerpolicy="no-referrer-when-downgrade"
-                            title="${video.title || 'YouTube Video'}"
-                            style="width:100%; height:100%;"
-                        ></iframe>
+                    // First create the video player container
+                    videoPlayerContent.innerHTML = `
+                        <div id="youtubePlayerContainer" style="width:100%; height:100%; position:relative;">
+                            <div id="youtubePlayer"></div>
+                            <button id="unmuteBtn" class="unmute-button">
+                                <i class="fas fa-volume-mute"></i> সাউন্ড চালু করুন
+                            </button>
+                            <div id="soundMessage" class="sound-message">
+                                <i class="fas fa-info-circle"></i> ভিডিওটি মিউট অবস্থায় চালু হয়েছে। সাউন্ড চালু করতে উপরের বাটন ক্লিক করুন।
+                            </div>
+                        </div>
                     `;
                     
-                    videoPlayerContent.innerHTML = embedHtml;
-                } else {
-                    // If no YouTube ID, try to use the provided embed code
-                    let embedHtml = video.embedCode || '';
+                    videoPlayerModal.classList.remove('hidden');
                     
-                    if (embedHtml) {
-                        // Fix the embed code by adding necessary attributes
-                        embedHtml = embedHtml.replace(
-                            /<iframe(.*?)>/,
-                            '<iframe$1 referrerpolicy="no-referrer-when-downgrade" allow="autoplay; encrypted-media" allowfullscreen>'
-                        );
+                    // Load YouTube IFrame API if not already loaded
+                    if (!window.YT) {
+                        const tag = document.createElement('script');
+                        tag.src = "https://www.youtube.com/iframe_api";
+                        const firstScriptTag = document.getElementsByTagName('script')[0];
+                        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
                         
-                        // Add autoplay parameter
-                        if (embedHtml.includes('src="')) {
-                            if (embedHtml.includes('?')) {
-                                embedHtml = embedHtml.replace('?', '?autoplay=1&');
-                            } else {
-                                embedHtml = embedHtml.replace('" ', '"?autoplay=1" ');
-                            }
-                        }
-                    } else {
-                        embedHtml = '<div class="no-video"><i class="fas fa-video-slash"></i><p>No video embed code available</p></div>';
+                        // Wait for API to load
+                        await new Promise((resolve) => {
+                            window.onYouTubeIframeAPIReady = () => {
+                                resolve();
+                            };
+                            
+                            // If API is already loaded
+                            setTimeout(() => {
+                                if (window.YT && window.YT.Player) {
+                                    resolve();
+                                }
+                            }, 1000);
+                        });
                     }
                     
-                    videoPlayerContent.innerHTML = embedHtml;
+                    // Give a small delay for DOM to update
+                    setTimeout(() => {
+                        // Create YouTube player - START WITH MUTED
+                        youtubePlayer = new YT.Player('youtubePlayer', {
+                            height: '100%',
+                            width: '100%',
+                            videoId: youtubeId,
+                            playerVars: {
+                                'autoplay': 1,
+                                'controls': 1,
+                                'rel': 0,
+                                'modestbranding': 1,
+                                'playsinline': 1,
+                                'mute': 1, // Start muted to allow autoplay
+                                'enablejsapi': 1
+                            },
+                            events: {
+                                'onReady': onPlayerReady,
+                                'onStateChange': onPlayerStateChange
+                            }
+                        });
+                        
+                        // Setup unmute button
+                        document.getElementById('unmuteBtn').addEventListener('click', () => {
+                            if (youtubePlayer) {
+                                youtubePlayer.unMute();
+                                youtubePlayer.setVolume(100);
+                                document.getElementById('unmuteBtn').innerHTML = '<i class="fas fa-volume-up"></i> সাউন্ড চালু হয়েছে';
+                                document.getElementById('unmuteBtn').style.backgroundColor = 'rgba(76, 201, 240, 0.9)';
+                                document.getElementById('soundMessage').style.display = 'none';
+                                
+                                // Change button text after 2 seconds
+                                setTimeout(() => {
+                                    document.getElementById('unmuteBtn').innerHTML = '<i class="fas fa-volume-up"></i> সাউন্ড চালু আছে';
+                                }, 2000);
+                            }
+                        });
+                        
+                        // Hide sound message after 10 seconds
+                        setTimeout(() => {
+                            const soundMessage = document.getElementById('soundMessage');
+                            if (soundMessage) {
+                                soundMessage.style.display = 'none';
+                            }
+                        }, 10000);
+                    }, 100);
+                } else {
+                    // If no YouTube ID
+                    videoPlayerContent.innerHTML = `
+                        <div class="no-video" style="padding: 40px;">
+                            <i class="fas fa-video-slash"></i>
+                            <h3>ভিডিও লোড করা যায়নি</h3>
+                            <p>দুঃখিত, এই ভিডিওটি চালানো সম্ভব নয়।</p>
+                        </div>
+                    `;
+                    videoPlayerModal.classList.remove('hidden');
                 }
-                
-                videoPlayerModal.classList.remove('hidden');
                 
                 // Increment view count
                 try {
@@ -2095,15 +2212,24 @@
                 videoPlayerContent.innerHTML = `
                     <div class="no-video" style="padding: 40px;">
                         <i class="fas fa-exclamation-triangle" style="color: #ef4444;"></i>
-                        <h3>Error Loading Video</h3>
-                        <p>Could not play the video. Please try again.</p>
-                        <button class="action-btn btn-primary" onclick="location.reload()" style="margin-top: 15px;">
-                            <i class="fas fa-redo"></i> Reload Page
-                        </button>
+                        <h3>ভিডিও লোড করতে সমস্যা</h3>
+                        <p>ভিডিওটি চালানো যায়নি। আবার চেষ্টা করুন।</p>
                     </div>
                 `;
                 videoPlayerModal.classList.remove('hidden');
             }
+        }
+
+        // YouTube Player Ready event
+        function onPlayerReady(event) {
+            console.log('YouTube player is ready');
+            // Player is ready, autoplay will start automatically
+        }
+
+        // YouTube Player State Change event
+        function onPlayerStateChange(event) {
+            // You can handle state changes here if needed
+            console.log('Player state changed:', event.data);
         }
 
         // Change password handler
@@ -2214,4 +2340,4 @@
         }
     </script>
 </body>
-</html>
+    </html>
