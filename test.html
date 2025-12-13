@@ -1,46 +1,104 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Ultra Fast Player</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.jsdelivr.net/npm/mediaelement@4.2.17/build/mediaelement-and-player.min.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mediaelement@4.2.17/build/mediaelementplayer.min.css">
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background: #000;
-    }
-    .mejs__container {
-      width: 100% !important;
-      height: 100vh !important;
-    }
-    .mejs__video {
-      width: 100% !important;
-      height: 100% !important;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Video Player</title>
+    <!-- Plyr CSS -->
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        .video-container {
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        .instructions {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #555;
+            line-height: 1.5;
+        }
+        .instructions h3 {
+            color: #333;
+            margin-bottom: 8px;
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <h1>YouTube Video Player</h1>
+        
+        <div class="video-container">
+            <div class="plyr__video-embed" id="player">
+                <iframe
+                    src="https://www.youtube.com/embed/uxcyT8CS3Ag?origin=https://plyr.io&amp;iv_load_policy=3&amp;modestbranding=1&amp;playsinline=1&amp;showinfo=0&amp;rel=0&amp;enablejsapi=1"
+                    allowfullscreen
+                    allowtransparency
+                    allow="autoplay"
+                ></iframe>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>How to use:</h3>
+            <p>1. The video will start playing when you click the play button</p>
+            <p>2. Use the controls at the bottom to play/pause, adjust volume, or change playback speed</p>
+            <p>3. Click the fullscreen button for fullscreen viewing</p>
+            <p>4. The video will automatically adapt to your screen size</p>
+        </div>
+    </div>
 
-  <video id="player1" width="100%" height="100%" poster="https://img.youtube.com/vi/_JIMcnrfbGo/hqdefault.jpg">
-    <source src="https://www.youtube.com/watch?v=_JIMcnrfbGo" type="video/youtube">
-  </video>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      new MediaElementPlayer('player1', {
-        features: ['playpause', 'current', 'progress', 'duration', 'volume', 'fullscreen'],
-        stretching: 'fill',
-        startVolume: 0.8,
-        poster: 'https://img.youtube.com/vi/_JIMcnrfbGo/hqdefault.jpg',
-        success: function(media, node, instance) {
-          console.log('Player loaded successfully');
-        }
-      });
-    });
-  </script>
-
+    <!-- Plyr JavaScript -->
+    <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
+    <script>
+        // Initialize Plyr video player
+        const player = new Plyr('#player', {
+            youtube: {
+                noCookie: true,
+                rel: 0,
+                showinfo: 0,
+                iv_load_policy: 3
+            }
+        });
+        
+        // Handle player events
+        player.on('ready', event => {
+            console.log('Player is ready');
+        });
+        
+        player.on('play', event => {
+            console.log('Video started playing');
+        });
+    </script>
 </body>
 </html>
