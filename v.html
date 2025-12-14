@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<<head>
+<head>
   <meta charset="UTF-8">
   <title>Fourth Year Course</title>
   <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
@@ -15,12 +15,10 @@
     import { 
       getFirestore, 
       doc,
-      getDoc,
-      updateDoc,
-      serverTimestamp
+      getDoc
     } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-    // Firebase config (index.html এর মতোই)
+    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyAJn31foXlB5ooSIdZ1aGcshMu955urDQo",
       authDomain: "fouth-year.firebaseapp.com",
@@ -43,6 +41,7 @@
     async function loadVideo() {
       if (!firestoreVideoId) {
         console.error('No video ID');
+        alert('No video specified');
         return;
       }
       
@@ -53,6 +52,7 @@
         
         if (!videoDoc.exists()) {
           console.error('Video not found');
+          alert('Video not found');
           return;
         }
         
@@ -70,14 +70,29 @@
         const youtubeId = extractYouTubeId(videoData.embedCode);
         
         if (!youtubeId) {
-          console.error('Invalid video');
+          console.error('Invalid video URL');
+          alert('Invalid video URL format');
           return;
         }
         
+        // Player element-এ YouTube ID সেট করুন
+        const playerElement = document.getElementById('player');
+        playerElement.setAttribute('data-plyr-embed-id', youtubeId);
+        
+        // Plyr player ইনিশিয়ালাইজ করুন
+        const player = new Plyr('#player');
+        
+        console.log('Video loaded successfully:', videoData.title || 'Untitled');
+        
+      } catch (error) {
+        console.error('Error loading video:', error);
+        alert('Error loading video. Please check console.');
+      }
+    }
+    
+    // ফাংশন কল করুন
+    loadVideo();
+    
   </script>
-<script>
-    const player = new Plyr('#player');
-</script>
-  
 </body>
 </html>
