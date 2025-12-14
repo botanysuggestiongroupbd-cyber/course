@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Video Player</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
   <style>
     * {
@@ -12,132 +11,21 @@
       box-sizing: border-box;
     }
     
-    html, body {
-      height: 100%;
-      overflow: hidden;
-    }
-    
     body {
       background-color: #000;
+      min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
     }
-    
-    .player-container {
-      width: 100vw;
-      height: 100vh;
-      position: relative;
-    }
-    
-    #player {
-      width: 100%;
-      height: 100%;
-    }
-    
-    /* Plyr custom styles for mobile */
-    .plyr--video {
-      height: 100vh !important;
-    }
-    
-    .plyr__video-wrapper {
-      height: 100vh !important;
-      background: #000;
-    }
-    
-    .plyr__poster {
-      background-size: contain !important;
-    }
-    
-    /* Fullscreen styles */
-    .plyr--fullscreen .plyr__video-wrapper {
-      height: 100vh !important;
-    }
-    
-    .plyr--fullscreen .plyr__video-wrapper video {
-      object-fit: contain !important;
-    }
-    
-    /* Mobile controls optimization */
-    .plyr__controls {
-      padding: 10px !important;
-    }
-    
-    .plyr__control {
-      width: 40px !important;
-      height: 40px !important;
-    }
-    
-    .plyr__time {
-      font-size: 14px !important;
-    }
-    
-    /* Unmute button styles */
-    .unmute-button {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      background: rgba(0,0,0,0.8);
-      color: white;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 5px;
-      cursor: pointer;
-      z-index: 1000;
-      font-weight: 600;
-      font-size: 12px;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    
-    .sound-message {
-      position: fixed;
-      bottom: 10px;
-      left: 10px;
-      background: rgba(0,0,0,0.8);
-      color: white;
-      padding: 8px 12px;
-      border-radius: 5px;
-      z-index: 1000;
-      font-size: 12px;
-      max-width: 250px;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    
-    /* Landscape mode support */
-    @media (orientation: landscape) {
-      .plyr--video {
-        height: 100vh !important;
-      }
-      
-      .plyr__video-wrapper {
-        height: 100vh !important;
-      }
-    }
-    
-    /* Portrait mode support */
-    @media (orientation: portrait) {
-      .plyr--video {
-        height: 100vh !important;
-      }
-      
-      .plyr__video-wrapper {
-        height: 100vh !important;
-      }
-    }
   </style>
 </head>
 <body>
-  <div class="player-container">
-    <div id="player" data-plyr-provider="youtube"></div>
-  </div>
+  <div id="player" data-plyr-provider="youtube"></div>
 
   <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
   <script type="module">
-    // Import Firebase modules
+    // Firebase modules
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
     import { 
       getFirestore, 
@@ -147,7 +35,7 @@
       serverTimestamp
     } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-    // Firebase configuration
+    // Firebase config (index.html এর মতোই)
     const firebaseConfig = {
       apiKey: "AIzaSyAJn31foXlB5ooSIdZ1aGcshMu955urDQo",
       authDomain: "fouth-year.firebaseapp.com",
@@ -162,20 +50,18 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Get video ID from URL
+    // Get Firestore video ID from URL
     const urlParams = new URLSearchParams(window.location.search);
     const firestoreVideoId = urlParams.get('videoId');
     
-    let player = null;
-    
-    // Extract YouTube ID from Firestore
-    async function loadVideoAndPlay() {
+    // Load video from Firestore
+    async function loadVideo() {
+      if (!firestoreVideoId) {
+        console.error('No video ID');
+        return;
+      }
+      
       try {
-        if (!firestoreVideoId) {
-          console.error('No video ID provided');
-          return;
-        }
-
         // Firestore থেকে ভিডিও ডাটা লোড করুন
         const videoRef = doc(db, 'videos', firestoreVideoId);
         const videoDoc = await getDoc(videoRef);
@@ -187,11 +73,19 @@
         
         const videoData = videoDoc.data();
         
-        // Extract YouTube ID from embedCode
+        // YouTube ID এক্সট্র্যাক্ট করুন
+        function extractYouTubeId(embedCode) {
+          if (!embedCode) return null;
+          const match = embedCode.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/) ||
+                       embedCode.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/) ||
+                       embedCode.match(/v=([a-zA-Z0-9_-]{11})/);
+          return match ? match[1] : null;
+        }
+        
         const youtubeId = extractYouTubeId(videoData.embedCode);
         
         if (!youtubeId) {
-          console.error('Invalid video format');
+          console.error('Invalid video');
           return;
         }
         
@@ -201,186 +95,23 @@
           lastViewed: serverTimestamp()
         });
         
-        // YouTube ID দিয়ে প্লেয়ার সেটআপ করুন
+        // প্লেয়ার সেটআপ করুন
         const playerElement = document.getElementById('player');
         playerElement.setAttribute('data-plyr-embed-id', youtubeId);
         
-        // Initialize player with mobile-optimized settings
-        player = new Plyr('#player', {
-          autoplay: true,
-          muted: true,
-          controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'settings', 'fullscreen'],
-          settings: ['quality', 'speed'],
-          keyboard: { focused: true, global: true },
-          tooltips: { controls: true, seek: true },
-          fullscreen: { 
-            enabled: true, 
-            fallback: true, 
-            iosNative: true,
-            selector: '.player-container'
-          },
-          ratio: '16:9',
-          hideControls: false,
-          clickToPlay: true,
-          disableContextMenu: true,
-          loadSprite: true,
-          iconPrefix: 'plyr',
-          iconUrl: 'https://cdn.plyr.io/3.7.8/plyr.svg',
-          blankVideo: 'https://cdn.plyr.io/static/blank.mp4',
-          storage: { enabled: true, key: 'plyr' },
-          autopause: true,
-          playsinline: true
-        });
-        
-        // Add unmute button
-        player.on('ready', () => {
-          // Create unmute button
-          const unmuteBtn = document.createElement('button');
-          unmuteBtn.className = 'unmute-button';
-          unmuteBtn.innerHTML = '🔇 সাউন্ড চালু করুন';
-          unmuteBtn.onclick = () => {
-            player.volume = 1;
-            player.muted = false;
-            unmuteBtn.innerHTML = '🔊 সাউন্ড চালু হয়েছে';
-            unmuteBtn.style.background = '#4361ee';
-            
-            // Remove button after 3 seconds
-            setTimeout(() => {
-              unmuteBtn.remove();
-            }, 3000);
-          };
-          
-          document.body.appendChild(unmuteBtn);
-          
-          // Show message
-          const message = document.createElement('div');
-          message.className = 'sound-message';
-          message.innerHTML = 'ℹ️ ভিডিওটি মিউট অবস্থায় চালু হয়েছে। সাউন্ড চালু করতে উপরের বাটন ক্লিক করুন।';
-          document.body.appendChild(message);
-          
-          // Remove message after 10 seconds
-          setTimeout(() => {
-            message.remove();
-          }, 10000);
-          
-          // Handle orientation change
-          handleOrientationChange();
-        });
-        
-        // Handle fullscreen change
-        player.on('enterfullscreen', () => {
-          document.querySelector('.player-container').style.height = '100vh';
-          document.querySelector('.plyr__video-wrapper').style.height = '100vh';
-        });
-        
-        player.on('exitfullscreen', () => {
-          document.querySelector('.player-container').style.height = '100vh';
-          document.querySelector('.plyr__video-wrapper').style.height = '100vh';
-        });
+        // প্লেয়ার ইনিশিয়ালাইজ করুন
+        const player = new Plyr('#player');
         
       } catch (error) {
-        console.error('Error loading video:', error);
+        console.error('Error:', error);
       }
     }
     
-    // Handle orientation change
-    function handleOrientationChange() {
-      const updatePlayerHeight = () => {
-        if (player) {
-          const container = document.querySelector('.player-container');
-          const videoWrapper = document.querySelector('.plyr__video-wrapper');
-          
-          container.style.height = window.innerHeight + 'px';
-          videoWrapper.style.height = window.innerHeight + 'px';
-          
-          if (player.fullscreen.active) {
-            document.documentElement.style.overflow = 'hidden';
-            document.body.style.overflow = 'hidden';
-          }
-        }
-      };
-      
-      // Initial update
-      updatePlayerHeight();
-      
-      // Update on resize and orientation change
-      window.addEventListener('resize', updatePlayerHeight);
-      window.addEventListener('orientationchange', () => {
-        setTimeout(updatePlayerHeight, 300);
-      });
-    }
-    
-    // YouTube ID extract function
-    function extractYouTubeId(embedCode) {
-      if (!embedCode) return null;
-      
-      // Check for youtube.com/embed/ format
-      const embedMatch = embedCode.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/);
-      if (embedMatch && embedMatch[1]) {
-        return embedMatch[1];
-      }
-      
-      // Check for youtu.be/ format
-      const shortMatch = embedCode.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
-      if (shortMatch && shortMatch[1]) {
-        return shortMatch[1];
-      }
-      
-      // Check for v= parameter
-      const paramMatch = embedCode.match(/v=([a-zA-Z0-9_-]{11})/);
-      if (paramMatch && paramMatch[1]) {
-        return paramMatch[1];
-      }
-      
-      return null;
-    }
-    
-    // Load video when page loads
-    document.addEventListener('DOMContentLoaded', loadVideoAndPlay);
+    // Load when page loads
+    document.addEventListener('DOMContentLoaded', loadVideo);
     
     // Disable right-click
-    document.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-    });
-    
-    // Prevent keyboard shortcuts
-    document.addEventListener('keydown', (e) => {
-      if (e.ctrlKey && (e.key === 'c' || e.key === 'C' || e.key === 'x' || e.key === 'X' || e.key === 'v' || e.key === 'V')) {
-        e.preventDefault();
-      }
-      if (e.key === 'F12') {
-        e.preventDefault();
-      }
-    });
-    
-    // Prevent zoom on mobile
-    document.addEventListener('touchstart', (e) => {
-      if (e.touches.length > 1) {
-        e.preventDefault();
-      }
-    }, { passive: false });
-    
-    let lastTouchEnd = 0;
-    document.addEventListener('touchend', (e) => {
-      const now = Date.now();
-      if (now - lastTouchEnd <= 300) {
-        e.preventDefault();
-      }
-      lastTouchEnd = now;
-    }, false);
-    
-    // Handle fullscreen on mobile
-    document.addEventListener('fullscreenchange', () => {
-      if (document.fullscreenElement) {
-        document.querySelector('.player-container').style.height = '100vh';
-      }
-    });
-    
-    document.addEventListener('webkitfullscreenchange', () => {
-      if (document.webkitFullscreenElement) {
-        document.querySelector('.player-container').style.height = '100vh';
-      }
-    });
+    document.addEventListener('contextmenu', (e) => e.preventDefault());
   </script>
 </body>
 </html>
