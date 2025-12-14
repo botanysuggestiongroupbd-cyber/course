@@ -720,133 +720,6 @@
             background-color: #1d4ed8;
         }
 
-        /* Video Player Modal */
-        .view-modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.9);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            padding: 15px;
-            backdrop-filter: blur(5px);
-        }
-
-        .view-modal {
-            background-color: white;
-            border-radius: 16px;
-            width: 100%;
-            max-width: 900px;
-            max-height: 85vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-        }
-
-        .view-modal-header {
-            background-color: var(--dark-color);
-            color: white;
-            padding: 18px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 1;
-        }
-
-        .view-modal-header h3 {
-            font-size: 1.3rem;
-            font-weight: 600;
-        }
-
-        .view-modal-content {
-            padding: 0;
-        }
-
-        .view-modal-video {
-            width: 100%;
-            aspect-ratio: 16/9;
-            background-color: #000;
-            position: relative;
-        }
-
-        .view-modal-video iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            border-radius: 4px;
-        }
-
-        .view-modal-info {
-            padding: 20px;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-
-        .badge-category {
-            background-color: var(--gray-color);
-            color: white;
-        }
-
-        /* Video Control Buttons */
-        .video-control-button {
-            position: absolute;
-            background-color: rgba(0, 0, 0, 0.7);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            z-index: 10;
-            font-weight: 600;
-            transition: all 0.3s;
-            font-size: 0.9rem;
-        }
-
-        .video-control-button:hover {
-            background-color: rgba(0, 0, 0, 0.9);
-            transform: scale(1.05);
-        }
-
-        .unmute-button {
-            top: 20px;
-            right: 20px;
-        }
-
-        .fullscreen-button {
-            top: 20px;
-            right: 150px;
-        }
-
-        .sound-message {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background-color: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 12px 20px;
-            border-radius: 5px;
-            font-size: 0.9rem;
-            max-width: 300px;
-            z-index: 10;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
         /* Tablet and larger mobile */
         @media (min-width: 481px) {
             .header h1 {
@@ -948,61 +821,6 @@
             .video-grid {
                 grid-template-columns: 1fr;
             }
-            
-            .video-control-button {
-                padding: 8px 12px;
-                font-size: 0.8rem;
-            }
-            
-            .fullscreen-button {
-                right: 120px;
-            }
-            
-            .sound-message {
-                padding: 8px 12px;
-                font-size: 0.8rem;
-            }
-        }
-
-        /* Fullscreen mode styles */
-        .fullscreen-mode .view-modal {
-            width: 100%;
-            height: 100%;
-            max-width: none;
-            max-height: none;
-            border-radius: 0;
-        }
-
-        .fullscreen-mode .view-modal-header {
-            display: none;
-        }
-
-        .fullscreen-mode .view-modal-info {
-            display: none;
-        }
-
-        .fullscreen-mode .view-modal-video {
-            height: 100vh;
-            aspect-ratio: auto;
-        }
-
-        .fullscreen-mode .video-control-button {
-            background-color: rgba(0, 0, 0, 0.5);
-        }
-
-        .fullscreen-mode .unmute-button {
-            top: 10px;
-            right: 10px;
-        }
-
-        .fullscreen-mode .fullscreen-button {
-            top: 10px;
-            right: 140px;
-        }
-
-        .fullscreen-mode .sound-message {
-            bottom: 10px;
-            left: 10px;
         }
     </style>
 </head>
@@ -1195,36 +1013,6 @@
             </div>
         </div>
         
-        <!-- Video Player Modal -->
-        <div id="videoPlayerModal" class="view-modal-overlay hidden">
-            <div class="view-modal">
-                <div class="view-modal-header">
-                    <h3 id="videoPlayerTitle"></h3>
-                    <button class="modal-close" id="closeVideoPlayerModal">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="view-modal-content">
-                    <div class="view-modal-video" id="videoPlayerContent">
-                        <!-- Video and controls will be loaded here -->
-                    </div>
-                    <div class="view-modal-info">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                            <div>
-                                <span id="videoPlayerCategory" class="badge badge-category"></span>
-                            </div>
-                            <div style="color: var(--gray-color);">
-                                <i class="fas fa-eye"></i> Views: <span id="videoPlayerViews">0</span>
-                            </div>
-                        </div>
-                        <div style="margin-top: 20px; font-size: 0.9rem; color: var(--gray-color);">
-                            <i class="fas fa-calendar"></i> Added on: <span id="videoPlayerDate"></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
         <div class="footer">
             <p>User Portal &copy; 2024 | Secure Login System</p>
         </div>
@@ -1257,7 +1045,7 @@
             onSnapshot
         } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-        // Firebase configuration (Admin Panel এর মতোই)
+        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAJn31foXlB5ooSIdZ1aGcshMu955urDQo",
             authDomain: "fouth-year.firebaseapp.com",
@@ -1303,23 +1091,12 @@
         const closePasswordModal = document.getElementById('closePasswordModal');
         const changePasswordBtn = document.getElementById('changePasswordBtn');
         const passwordMessage = document.getElementById('passwordMessage');
-        
-        // Video player modal elements
-        const videoPlayerModal = document.getElementById('videoPlayerModal');
-        const closeVideoPlayerModal = document.getElementById('closeVideoPlayerModal');
-        const videoPlayerTitle = document.getElementById('videoPlayerTitle');
-        const videoPlayerContent = document.getElementById('videoPlayerContent');
-        const videoPlayerCategory = document.getElementById('videoPlayerCategory');
-        const videoPlayerViews = document.getElementById('videoPlayerViews');
-        const videoPlayerDate = document.getElementById('videoPlayerDate');
 
         // Current user state
         let currentUser = null;
         let userData = null;
         let videoSnapshotUnsubscribe = null;
         let allVideos = [];
-        let youtubePlayer = null;
-        let isFullscreen = false;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
@@ -1330,39 +1107,6 @@
             onAuthStateChanged(auth, (user) => {
                 if (user) {
                     checkUserStatus(user);
-                }
-            });
-
-            // Prevent right-click context menu
-            document.addEventListener('contextmenu', function(e) {
-                // Allow right-click in input fields and textareas
-                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || 
-                    e.target.tagName === 'SELECT' || e.target.isContentEditable) {
-                    return;
-                }
-                
-                // Prevent right-click on video player and thumbnails
-                if (e.target.closest('.video-preview') || e.target.closest('.view-modal-video')) {
-                    e.preventDefault();
-                    showMessage(dashboardMessage, 'Right-click is disabled for videos', 'warning');
-                    return false;
-                }
-                
-                return true;
-            });
-
-            // Prevent keyboard shortcuts for copy, cut, paste
-            document.addEventListener('keydown', function(e) {
-                // Allow normal typing in input fields
-                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || 
-                    e.target.tagName === 'SELECT' || e.target.isContentEditable) {
-                    return;
-                }
-                
-                // Prevent Ctrl+C, Ctrl+X, Ctrl+V
-                if (e.ctrlKey && (e.key === 'c' || e.key === 'C' || e.key === 'x' || e.key === 'X' || e.key === 'v' || e.key === 'V')) {
-                    e.preventDefault();
-                    return false;
                 }
             });
         });
@@ -1464,36 +1208,10 @@
             
             changePasswordBtn.addEventListener('click', handleChangePassword);
             
-            // Video player modal close
-            closeVideoPlayerModal.addEventListener('click', () => {
-                videoPlayerModal.classList.remove('fullscreen-mode');
-                videoPlayerModal.classList.add('hidden');
-                // Clear video content to stop playback
-                videoPlayerContent.innerHTML = '';
-                if (youtubePlayer) {
-                    youtubePlayer.destroy();
-                    youtubePlayer = null;
-                }
-                isFullscreen = false;
-            });
-            
             // Close modal when clicking outside
             changePasswordModal.addEventListener('click', (e) => {
                 if (e.target === changePasswordModal) {
                     changePasswordModal.classList.add('hidden');
-                }
-            });
-            
-            videoPlayerModal.addEventListener('click', (e) => {
-                if (e.target === videoPlayerModal) {
-                    videoPlayerModal.classList.remove('fullscreen-mode');
-                    videoPlayerModal.classList.add('hidden');
-                    videoPlayerContent.innerHTML = '';
-                    if (youtubePlayer) {
-                        youtubePlayer.destroy();
-                        youtubePlayer = null;
-                    }
-                    isFullscreen = false;
                 }
             });
             
@@ -1510,35 +1228,9 @@
                     handleChangePassword();
                 }
             });
-
-            // Listen for fullscreen change
-            document.addEventListener('fullscreenchange', handleFullscreenChange);
-            document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-            document.addEventListener('mozfullscreenchange', handleFullscreenChange);
-            document.addEventListener('MSFullscreenChange', handleFullscreenChange);
         }
 
-        // Handle fullscreen change
-        function handleFullscreenChange() {
-            const isInFullscreen = document.fullscreenElement || 
-                                 document.webkitFullscreenElement ||
-                                 document.mozFullScreenElement ||
-                                 document.msFullscreenElement;
-            
-            if (!isInFullscreen && isFullscreen) {
-                // Exited fullscreen
-                videoPlayerModal.classList.remove('fullscreen-mode');
-                isFullscreen = false;
-                
-                // Update fullscreen button
-                const fullscreenBtn = document.getElementById('fullscreenBtn');
-                if (fullscreenBtn) {
-                    fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i> ফুলস্ক্রিন';
-                }
-            }
-        }
-
-        // Device tracking functions (Admin Panel এর মতোই)
+        // Device tracking functions
         function generateDeviceId() {
             const navigatorInfo = navigator.userAgent + navigator.language + navigator.platform;
             let hash = 0;
@@ -1899,19 +1591,12 @@
             try {
                 console.log('Loading videos for user...');
                 
-                // First, let's check if there are any videos at all
-                const videosCollection = collection(db, 'videos');
-                const allVideosSnapshot = await getDocs(videosCollection);
-                
-                console.log('Total videos in collection:', allVideosSnapshot.size);
-                
                 // Let's get all videos and filter client-side to avoid index issues
-                const querySnapshot = await getDocs(videosCollection);
+                const querySnapshot = await getDocs(collection(db, 'videos'));
                 allVideos = [];
                 
                 querySnapshot.forEach((doc) => {
                     const videoData = doc.data();
-                    console.log('Video data:', videoData);
                     
                     // Only include public videos
                     if (videoData.status === 'public') {
@@ -1939,46 +1624,14 @@
                 console.error('Error loading videos:', error);
                 console.error('Error details:', error.code, error.message);
                 
-                // Try alternative method if the first one fails
-                try {
-                    // Alternative approach: Get all videos without filtering
-                    const videosCollection = collection(db, 'videos');
-                    const querySnapshot = await getDocs(videosCollection);
-                    
-                    allVideos = [];
-                    querySnapshot.forEach((doc) => {
-                        const videoData = doc.data();
-                        allVideos.push({ 
-                            id: doc.id, 
-                            ...videoData,
-                            createdAt: videoData.createdAt ? videoData.createdAt.toDate() : null,
-                            updatedAt: videoData.updatedAt ? videoData.updatedAt.toDate() : null
-                        });
-                    });
-                    
-                    // Filter client-side
-                    allVideos = allVideos.filter(video => video.status === 'public');
-                    
-                    // Sort by order if available
-                    allVideos.sort((a, b) => {
-                        const orderA = a.order || 999;
-                        const orderB = b.order || 999;
-                        return orderA - orderB;
-                    });
-                    
-                    renderUserVideos(allVideos);
-                } catch (altError) {
-                    console.error('Alternative method also failed:', altError);
-                    
-                    videosContainer.innerHTML = `
-                        <div class="no-devices" style="grid-column: 1 / -1;">
-                            <i class="fas fa-exclamation-triangle" style="color: #ef4444;"></i>
-                            <h3>Error Loading Videos</h3>
-                            <p>Could not load video content. Please try again later.</p>
-                            <p style="font-size: 0.8rem; margin-top: 10px;">Error: ${altError.message}</p>
-                        </div>
-                    `;
-                }
+                videosContainer.innerHTML = `
+                    <div class="no-devices" style="grid-column: 1 / -1;">
+                        <i class="fas fa-exclamation-triangle" style="color: #ef4444;"></i>
+                        <h3>Error Loading Videos</h3>
+                        <p>Could not load video content. Please try again later.</p>
+                        <p style="font-size: 0.8rem; margin-top: 10px;">Error: ${error.message}</p>
+                    </div>
+                `;
             }
         }
 
@@ -1989,16 +1642,12 @@
             }
             
             try {
-                // Use simpler query without where clause to avoid index issues
-                const q = query(collection(db, 'videos'));
-                
-                videoSnapshotUnsubscribe = onSnapshot(q, (snapshot) => {
+                videoSnapshotUnsubscribe = onSnapshot(collection(db, 'videos'), (snapshot) => {
                     console.log('Realtime update received:', snapshot.size, 'videos');
                     
                     allVideos = [];
                     snapshot.forEach((doc) => {
                         const videoData = doc.data();
-                        console.log('Realtime video data:', videoData);
                         
                         // Only include public videos
                         if (videoData.status === 'public') {
@@ -2024,37 +1673,6 @@
                     renderUserVideos(allVideos);
                 }, (error) => {
                     console.error('Realtime listener error:', error);
-                    console.error('Realtime error details:', error.code, error.message);
-                    
-                    // Try alternative approach for realtime updates
-                    try {
-                        // Use collection directly without query
-                        videoSnapshotUnsubscribe = onSnapshot(collection(db, 'videos'), (snapshot) => {
-                            allVideos = [];
-                            snapshot.forEach((doc) => {
-                                const videoData = doc.data();
-                                if (videoData.status === 'public') {
-                                    allVideos.push({ 
-                                        id: doc.id, 
-                                        ...videoData,
-                                        createdAt: videoData.createdAt ? videoData.createdAt.toDate() : null,
-                                        updatedAt: videoData.updatedAt ? videoData.updatedAt.toDate() : null
-                                    });
-                                }
-                            });
-                            
-                            // Sort by order if available
-                            allVideos.sort((a, b) => {
-                                const orderA = a.order || 999;
-                                const orderB = b.order || 999;
-                                return orderA - orderB;
-                            });
-                            
-                            renderUserVideos(allVideos);
-                        });
-                    } catch (altError) {
-                        console.error('Alternative realtime method also failed:', altError);
-                    }
                 });
             } catch (error) {
                 console.error('Error setting up realtime updates:', error);
@@ -2166,7 +1784,7 @@
             });
         }
 
-        // FIXED FUNCTION: Extract YouTube ID from embed code
+        // Extract YouTube ID from embed code
         function extractYouTubeId(embedCode) {
             if (!embedCode) return null;
             
@@ -2191,190 +1809,34 @@
             return null;
         }
 
-        // Function to toggle fullscreen
-        function toggleFullscreen() {
-            const videoModal = document.querySelector('.view-modal');
-            
-            if (!isFullscreen) {
-                // Enter fullscreen
-                if (videoModal.requestFullscreen) {
-                    videoModal.requestFullscreen();
-                } else if (videoModal.webkitRequestFullscreen) {
-                    videoModal.webkitRequestFullscreen();
-                } else if (videoModal.mozRequestFullScreen) {
-                    videoModal.mozRequestFullScreen();
-                } else if (videoModal.msRequestFullscreen) {
-                    videoModal.msRequestFullscreen();
-                }
-                
-                videoPlayerModal.classList.add('fullscreen-mode');
-                isFullscreen = true;
-                
-                // Update button text
-                const fullscreenBtn = document.getElementById('fullscreenBtn');
-                if (fullscreenBtn) {
-                    fullscreenBtn.innerHTML = '<i class="fas fa-compress"></i> ফুলস্ক্রিন বন্ধ';
-                }
-            } else {
-                // Exit fullscreen
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                } else if (document.webkitExitFullscreen) {
-                    document.webkitExitFullscreen();
-                } else if (document.mozCancelFullScreen) {
-                    document.mozCancelFullScreen();
-                } else if (document.msExitFullscreen) {
-                    document.msExitFullscreen();
-                }
-                
-                videoPlayerModal.classList.remove('fullscreen-mode');
-                isFullscreen = false;
-                
-                // Update button text
-                const fullscreenBtn = document.getElementById('fullscreenBtn');
-                if (fullscreenBtn) {
-                    fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i> ফুলস্ক্রিন';
-                }
-            }
-        }
-
-        // SIMPLE FIXED FUNCTION: Play video in modal - WORKING VERSION
+        // Play video in v.html page
         async function playUserVideo(video) {
             try {
-                videoPlayerTitle.textContent = video.title || 'Untitled Video';
-                videoPlayerCategory.textContent = video.category || 'Uncategorized';
-                videoPlayerViews.textContent = video.views || 0;
+                // ভিউ কাউন্ট ইনক্রিমেন্ট করুন
+                const videoRef = doc(db, 'videos', video.id);
+                await updateDoc(videoRef, {
+                    views: (video.views || 0) + 1,
+                    lastViewed: serverTimestamp()
+                });
                 
-                if (video.createdAt) {
-                    const date = video.createdAt instanceof Date ? video.createdAt : video.createdAt.toDate();
-                    videoPlayerDate.textContent = date.toLocaleDateString();
-                } else {
-                    videoPlayerDate.textContent = 'Unknown';
+                // Local ভিডিও ডাটা আপডেট করুন
+                const videoIndex = allVideos.findIndex(v => v.id === video.id);
+                if (videoIndex !== -1) {
+                    allVideos[videoIndex].views = (allVideos[videoIndex].views || 0) + 1;
                 }
                 
-                // Extract YouTube ID
+                // YouTube ID এক্সট্র্যাক্ট করুন
                 const youtubeId = extractYouTubeId(video.embedCode);
                 
                 if (youtubeId) {
-                    // SIMPLE SOLUTION: Direct iframe without complex YouTube API
-                    const embedHtml = `
-                        <div style="position: relative; width: 100%; height: 100%;">
-                            <iframe 
-                                id="simpleYoutubePlayer"
-                                src="https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0&modestbranding=1&mute=1&playsinline=1&controls=1&enablejsapi=1&fs=1" 
-                                frameborder="0" 
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                                allowfullscreen
-                                referrerpolicy="strict-origin-when-cross-origin"
-                                title="${video.title || 'YouTube Video'}"
-                                style="width:100%; height:100%;"
-                            ></iframe>
-                            <button id="unmuteBtn" class="video-control-button unmute-button">
-                                <i class="fas fa-volume-mute"></i> সাউন্ড চালু করুন
-                            </button>
-                            <button id="fullscreenBtn" class="video-control-button fullscreen-button">
-                                <i class="fas fa-expand"></i> ফুলস্ক্রিন
-                            </button>
-                            <div id="soundMessage" class="sound-message">
-                                <i class="fas fa-info-circle"></i> ভিডিওটি মিউট অবস্থায় চালু হয়েছে। সাউন্ড চালু করতে উপরের বাটন ক্লিক করুন।
-                            </div>
-                        </div>
-                    `;
-                    
-                    videoPlayerContent.innerHTML = embedHtml;
-                    videoPlayerModal.classList.remove('hidden');
-                    
-                    // Give a small delay for iframe to load
-                    setTimeout(() => {
-                        // Setup unmute button
-                        const unmuteBtn = document.getElementById('unmuteBtn');
-                        if (unmuteBtn) {
-                            unmuteBtn.addEventListener('click', () => {
-                                const iframe = document.getElementById('simpleYoutubePlayer');
-                                if (iframe) {
-                                    // Change src to unmute
-                                    const currentSrc = iframe.src;
-                                    if (currentSrc.includes('mute=1')) {
-                                        iframe.src = currentSrc.replace('mute=1', 'mute=0');
-                                    }
-                                    unmuteBtn.innerHTML = '<i class="fas fa-volume-up"></i> সাউন্ড চালু হয়েছে';
-                                    unmuteBtn.style.backgroundColor = 'rgba(76, 201, 240, 0.9)';
-                                    
-                                    // Hide sound message
-                                    const soundMessage = document.getElementById('soundMessage');
-                                    if (soundMessage) {
-                                        soundMessage.style.display = 'none';
-                                    }
-                                    
-                                    // Change button text after 2 seconds
-                                    setTimeout(() => {
-                                        unmuteBtn.innerHTML = '<i class="fas fa-volume-up"></i> সাউন্ড চালু আছে';
-                                    }, 2000);
-                                }
-                            });
-                        }
-                        
-                        // Setup fullscreen button
-                        const fullscreenBtn = document.getElementById('fullscreenBtn');
-                        if (fullscreenBtn) {
-                            fullscreenBtn.addEventListener('click', toggleFullscreen);
-                        }
-                        
-                        // Hide sound message after 10 seconds
-                        setTimeout(() => {
-                            const soundMessage = document.getElementById('soundMessage');
-                            if (soundMessage) {
-                                soundMessage.style.display = 'none';
-                            }
-                        }, 10000);
-                        
-                        // Prevent right-click on video player
-                        videoPlayerContent.addEventListener('contextmenu', function(e) {
-                            e.preventDefault();
-                            showMessage(dashboardMessage, 'Right-click is disabled for videos', 'warning');
-                            return false;
-                        });
-                        
-                    }, 100);
+                    // v.html পেজে রিডাইরেক্ট করুন
+                    window.open(`v.html?videoId=${video.id}`, '_blank');
                 } else {
-                    // If no YouTube ID
-                    videoPlayerContent.innerHTML = `
-                        <div class="no-video" style="padding: 40px;">
-                            <i class="fas fa-video-slash"></i>
-                            <h3>ভিডিও লোড করা যায়নি</h3>
-                            <p>দুঃখিত, এই ভিডিওটি চালানো সম্ভব নয়।</p>
-                        </div>
-                    `;
-                    videoPlayerModal.classList.remove('hidden');
+                    showMessage(dashboardMessage, 'ভিডিওটি প্লে করা সম্ভব নয়।', 'error');
                 }
-                
-                // Increment view count
-                try {
-                    const videoRef = doc(db, 'videos', video.id);
-                    await updateDoc(videoRef, {
-                        views: (video.views || 0) + 1,
-                        lastViewed: serverTimestamp()
-                    });
-                    
-                    // Update local video data
-                    const videoIndex = allVideos.findIndex(v => v.id === video.id);
-                    if (videoIndex !== -1) {
-                        allVideos[videoIndex].views = (allVideos[videoIndex].views || 0) + 1;
-                    }
-                } catch (error) {
-                    console.error('Error updating view count:', error);
-                }
-                
             } catch (error) {
                 console.error('Error playing video:', error);
-                videoPlayerContent.innerHTML = `
-                    <div class="no-video" style="padding: 40px;">
-                        <i class="fas fa-exclamation-triangle" style="color: #ef4444;"></i>
-                        <h3>ভিডিও লোড করতে সমস্যা</h3>
-                        <p>ভিডিওটি চালানো যায়নি। আবার চেষ্টা করুন।</p>
-                    </div>
-                `;
-                videoPlayerModal.classList.remove('hidden');
+                showMessage(dashboardMessage, 'ভিডিও লোড করতে সমস্যা।', 'error');
             }
         }
 
