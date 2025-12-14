@@ -74,29 +74,6 @@
           return;
         }
         
-        // ভিউ কাউন্ট আপডেট করুন
-        await updateDoc(videoRef, {
-          views: (videoData.views || 0) + 1,
-          lastViewed: serverTimestamp()
-        });
-        
-        // প্লেয়ার সেটআপ করুন
-        const playerElement = document.getElementById('player');
-        playerElement.setAttribute('data-plyr-embed-id', youtubeId);
-        
-        // প্লেয়ার ইনিশিয়ালাইজ করুন
-        const player = new Plyr('#player');
-        
-      } catch (error) {
-        console.error('Error:', error);
-      }
-    }
-    
-    // Load when page loads
-    document.addEventListener('DOMContentLoaded', loadVideo);
-    
-    // Disable right-click
-    document.addEventListener('contextmenu', (e) => e.preventDefault());
   </script>
 </body>
 </html>
