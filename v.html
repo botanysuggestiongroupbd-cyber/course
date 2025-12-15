@@ -114,6 +114,16 @@
       opacity: 1;
     }
     
+    /* Plyr কাস্টম স্টাইল - ফুলস্ক্রিনে কন্ট্রোলার হাইড করার জন্য */
+    .plyr--fullscreen .plyr__controls {
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    
+    .plyr--fullscreen .plyr__controls.plyr__controls--visible {
+      opacity: 1;
+    }
+    
     .plyr--fullscreen-active {
       background: #000;
     }
@@ -146,6 +156,20 @@
       
       .plyr {
         --plyr-color-main: #f00;
+      }
+      
+      /* মোবাইলে কন্ট্রোলার বড় করুন */
+      .plyr__controls {
+        padding: 10px !important;
+      }
+      
+      .plyr__control {
+        width: 40px !important;
+        height: 40px !important;
+      }
+      
+      .plyr__time {
+        font-size: 14px !important;
       }
       
       #auth-message {
@@ -340,7 +364,7 @@
         // Set YouTube ID to player
         playerElement.setAttribute('data-plyr-embed-id', youtubeId);
         
-        // Initialize Plyr player
+        // Initialize Plyr player with autohide controls
         const player = new Plyr('#player', {
           fullscreen: {
             enabled: true,
@@ -362,13 +386,55 @@
             'fullscreen'
           ],
           settings: ['captions', 'quality', 'speed'],
-          hideControls: false,
+          hideControls: true, // কন্ট্রোলার স্বয়ংক্রিয়ভাবে হাইড হবে
           keyboard: { focused: true, global: true },
-          tooltips: { controls: true, seek: true }
+          tooltips: { controls: true, seek: true },
+          autoplay: false,
+          clickToPlay: true,
+          disableContextMenu: false,
+          invertTime: true,
+          volume: 1,
+          muted: false,
+          storage: { enabled: true, key: 'plyr' },
+          loop: { active: false }
         });
         
-        // ফুলস্ক্রিন ইভেন্ট হ্যান্ডলার
+        // কাস্টম কন্ট্রোলার হাইড/শো লজিক
+        let hideControlsTimeout;
+        let controlsVisible = false;
+        
+        function showControls() {
+          if (!player.fullscreen.active) return;
+          
+          const controls = player.elements.controls;
+          if (controls) {
+            controls.classList.add('plyr__controls--visible');
+            controlsVisible = true;
+            
+            // 3 সেকেন্ড পর আবার হাইড করুন
+            clearTimeout(hideControlsTimeout);
+            hideControlsTimeout = setTimeout(() => {
+              hideControls();
+            }, 3000);
+          }
+        }
+        
+        function hideControls() {
+          if (!player.fullscreen.active) return;
+          
+          const controls = player.elements.controls;
+          if (controls && controlsVisible) {
+            controls.classList.remove('plyr__controls--visible');
+            controlsVisible = false;
+          }
+        }
+        
+        // ফুলস্ক্রিনে এন্ট্রি করলে কন্ট্রোলার হাইড করুন
         player.on('enterfullscreen', event => {
+          setTimeout(() => {
+            hideControls();
+          }, 500);
+          
           if (isMobileDevice()) {
             try {
               if (screen.orientation && screen.orientation.lock) {
@@ -382,13 +448,50 @@
           }
         });
         
+        // ফুলস্ক্রিন থেকে বের হলে কন্ট্রোলার দেখান
         player.on('exitfullscreen', event => {
+          showControls();
+          
           try {
             if (screen.orientation && screen.orientation.unlock) {
               screen.orientation.unlock();
             }
           } catch (e) {
             console.log('Orientation unlock error:', e);
+          }
+        });
+        
+        // প্লেয়ারে ক্লিক/ট্যাপ করলে কন্ট্রোলার দেখান
+        player.elements.container.addEventListener('click', () => {
+          if (player.fullscreen.active) {
+            showControls();
+          }
+        });
+        
+        // মাউস মুভ করলেও কন্ট্রোলার দেখান
+        player.elements.container.addEventListener('mousemove', () => {
+          if (player.fullscreen.active) {
+            showControls();
+          }
+        });
+        
+        // টাচ মুভ করলেও কন্ট্রোলার দেখান (মোবাইলের জন্য)
+        player.elements.container.addEventListener('touchmove', () => {
+          if (player.fullscreen.active) {
+            showControls();
+          }
+        });
+        
+        // ভিডিও প্লে/পজ করলেও কন্ট্রোলার দেখান
+        player.on('play', () => {
+          if (player.fullscreen.active) {
+            showControls();
+          }
+        });
+        
+        player.on('pause', () => {
+          if (player.fullscreen.active) {
+            showControls();
           }
         });
         
@@ -415,28 +518,21 @@
       }
     }
 
-    // Check authentication state - IMPORTANT: Single source of truth
+    // Check authentication state
     let authChecked = false;
     
     onAuthStateChanged(auth, (user) => {
-      // Prevent multiple calls
       if (authChecked) return;
       authChecked = true;
       
       if (user) {
-        // User is logged in
         console.log("User logged in:", user.email);
-        // Immediately hide auth message if it was showing
         authMessage.classList.remove('show');
-        // Load video
         loadVideo();
       } else {
-        // User is not logged in
         console.log("User not logged in");
-        // Show auth message directly without loading screen
         showAuthMessage();
         
-        // Clear player if exists
         if (playerElement.hasAttribute('data-plyr-embed-id')) {
           playerElement.removeAttribute('data-plyr-embed-id');
         }
