@@ -11,12 +11,72 @@
       padding: 0;
       background: #000;
       overflow-x: hidden;
+      font-family: Arial, sans-serif;
+    }
+    
+    #auth-message {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.95);
+      color: white;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      text-align: center;
+    }
+    
+    #auth-message h2 {
+      color: #ff4444;
+      margin-bottom: 20px;
+    }
+    
+    #auth-message p {
+      margin-bottom: 30px;
+      font-size: 18px;
+      max-width: 500px;
+    }
+    
+    #login-btn, #logout-btn {
+      padding: 12px 24px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    
+    #login-btn:hover, #logout-btn:hover {
+      background: #0056b3;
+    }
+    
+    #logout-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #dc3545;
+      z-index: 100;
+      padding: 10px 20px;
+    }
+    
+    #logout-btn:hover {
+      background: #c82333;
     }
     
     #player {
       max-width: 100%;
       margin: 0 auto;
       background: #000;
+      display: none;
     }
     
     .plyr--fullscreen-active {
@@ -33,10 +93,40 @@
       .plyr {
         --plyr-color-main: #f00;
       }
+      
+      #auth-message {
+        padding: 15px;
+      }
+      
+      #auth-message h2 {
+        font-size: 24px;
+      }
+      
+      #auth-message p {
+        font-size: 16px;
+      }
+      
+      #logout-btn {
+        top: 10px;
+        right: 10px;
+        padding: 8px 16px;
+        font-size: 14px;
+      }
     }
   </style>
 </head>
 <body>
+  <!-- Authentication Message -->
+  <div id="auth-message">
+    <h2>Access Restricted</h2>
+    <p>You must be logged in to view this content. Please login with your Google account to continue.</p>
+    <button id="login-btn">Login with Google</button>
+  </div>
+  
+  <!-- Logout Button (shown only when logged in) -->
+  <button id="logout-btn" style="display: none;">Logout</button>
+  
+  <!-- Video Player -->
   <div id="player" data-plyr-provider="youtube" data-plyr-embed-id=""></div>
 
   <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
@@ -50,6 +140,13 @@
       updateDoc,
       serverTimestamp
     } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+    import { 
+      getAuth, 
+      onAuthStateChanged, 
+      signOut,
+      GoogleAuthProvider,
+      signInWithPopup 
+    } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
     // Firebase config
     const firebaseConfig = {
@@ -65,6 +162,14 @@
     // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    // DOM elements
+    const authMessage = document.getElementById('auth-message');
+    const playerElement = document.getElementById('player');
+    const loginBtn = document.getElementById('login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
 
     // Get Firestore video ID from URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -84,10 +189,32 @@
       return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     }
     
+    // Login function
+    async function login() {
+      try {
+        await signInWithPopup(auth, provider);
+        console.log("Login successful");
+      } catch (error) {
+        console.error("Login error:", error);
+        alert("Login failed: " + error.message);
+      }
+    }
+
+    // Logout function
+    async function logout() {
+      try {
+        await signOut(auth);
+        console.log("Logged out");
+      } catch (error) {
+        console.error("Logout error:", error);
+      }
+    }
+    
     // Load video from Firestore
     async function loadVideo() {
       if (!firestoreVideoId) {
         console.error('No video ID');
+        alert('No video specified');
         return;
       }
       
@@ -98,6 +225,7 @@
         
         if (!videoDoc.exists()) {
           console.error('Video not found');
+          alert('Video not found');
           return;
         }
         
@@ -106,11 +234,11 @@
         
         if (!youtubeId) {
           console.error('Invalid video');
+          alert('Invalid video URL format');
           return;
         }
         
         // প্লেয়ার এলিমেন্টে YouTube ID সেট করুন
-        const playerElement = document.getElementById('player');
         playerElement.setAttribute('data-plyr-embed-id', youtubeId);
         
         // Plyr প্লেয়ার ইনিশিয়ালাইজ করুন
@@ -180,24 +308,51 @@
           }
         });
         
+        console.log('Video loaded successfully:', videoData.title || 'Untitled');
+        
       } catch (error) {
         console.error('Error loading video:', error);
+        alert('Error loading video. Please check console.');
       }
     }
-    
-    // Load video when DOM is ready
-    document.addEventListener('DOMContentLoaded', loadVideo);
-    
+
+    // Check authentication state
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // User is logged in
+        console.log("User logged in:", user.email);
+        authMessage.style.display = 'none';
+        playerElement.style.display = 'block';
+        logoutBtn.style.display = 'block';
+        loadVideo();
+      } else {
+        // User is not logged in
+        console.log("User not logged in");
+        authMessage.style.display = 'flex';
+        playerElement.style.display = 'none';
+        logoutBtn.style.display = 'none';
+        
+        // Clear player if exists
+        if (playerElement.hasAttribute('data-plyr-embed-id')) {
+          playerElement.removeAttribute('data-plyr-embed-id');
+        }
+      }
+    });
+
+    // Event listeners
+    loginBtn.addEventListener('click', login);
+    logoutBtn.addEventListener('click', logout);
+
     // Resize handler for better mobile experience
     window.addEventListener('resize', () => {
-      const playerElement = document.querySelector('.plyr');
-      if (playerElement && isMobileDevice()) {
+      const player = document.querySelector('.plyr');
+      if (player && isMobileDevice()) {
         if (window.innerHeight > window.innerWidth) {
           // Portrait mode
-          playerElement.style.maxHeight = '80vh';
+          player.style.maxHeight = '80vh';
         } else {
           // Landscape mode
-          playerElement.style.maxHeight = '100vh';
+          player.style.maxHeight = '100vh';
         }
       }
     });
