@@ -36,12 +36,65 @@
             padding: 15px;
         }
 
+        /* Loading Screen Styles */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #000;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            font-size: 18px;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        #loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-content {
+            text-align: center;
+        }
+
+        .loading-text {
+            font-size: 16px;
+            margin-top: 15px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
         .container {
             width: 100%;
             max-width: 1200px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .container.show {
+            opacity: 1;
         }
 
         .header {
@@ -69,6 +122,14 @@
             overflow: hidden;
             width: 100%;
             transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .card.show {
+            opacity: 1;
+            transform: translateY(0);
         }
 
         .card-header {
@@ -129,6 +190,14 @@
             border-radius: 12px;
             padding: 18px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.5s ease 0.2s, transform 0.5s ease 0.2s;
+        }
+
+        .section.show {
+            opacity: 1;
+            transform: translateY(0);
         }
 
         .section h3 {
@@ -271,6 +340,15 @@
             align-items: center;
             gap: 10px;
             font-size: 0.95rem;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .message.show {
+            display: flex;
+            opacity: 1;
+            transform: translateY(0);
         }
 
         .message-success {
@@ -347,6 +425,14 @@
             align-items: center;
             padding-bottom: 10px;
             border-bottom: 1px solid #e5e7eb;
+            opacity: 0;
+            transform: translateX(-10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .profile-item.show {
+            opacity: 1;
+            transform: translateX(0);
         }
 
         .profile-item:last-child {
@@ -415,6 +501,14 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
             border-left: 4px solid var(--primary-color);
             margin-bottom: 12px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .device-card.show {
+            opacity: 1;
+            transform: translateY(0);
         }
 
         .device-header {
@@ -623,6 +717,14 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
             transition: transform 0.3s, box-shadow 0.3s;
             border: 2px solid transparent;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .video-card.show {
+            opacity: 1;
+            transform: translateY(0);
         }
 
         .video-card:hover {
@@ -825,6 +927,14 @@
     </style>
 </head>
 <body>
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <div class="loading-text">Loading User Portal...</div>
+        </div>
+    </div>
+    
     <div class="container">
         <div class="header">
             <h1><i class="fas fa-user-circle"></i> User Login Portal</h1>
@@ -1062,6 +1172,7 @@
         const db = getFirestore(app);
 
         // DOM Elements
+        const loadingScreen = document.getElementById('loading-screen');
         const loginSection = document.getElementById('loginSection');
         const dashboardSection = document.getElementById('dashboardSection');
         const loginBtn = document.getElementById('loginBtn');
@@ -1070,6 +1181,7 @@
         const dashboardMessage = document.getElementById('dashboardMessage');
         const userEmail = document.getElementById('userEmail');
         const userRoleDisplay = document.getElementById('userRoleDisplay');
+        const container = document.querySelector('.container');
         
         // Profile elements
         const profileName = document.getElementById('profileName');
@@ -1098,8 +1210,61 @@
         let videoSnapshotUnsubscribe = null;
         let allVideos = [];
 
+        // Show/Hide loading screen
+        function showLoading(text = 'Loading...') {
+            loadingScreen.classList.remove('hidden');
+            const loadingText = loadingScreen.querySelector('.loading-text');
+            if (loadingText) {
+                loadingText.textContent = text;
+            }
+        }
+
+        function hideLoading() {
+            setTimeout(() => {
+                loadingScreen.classList.add('hidden');
+                container.classList.add('show');
+            }, 300);
+        }
+
+        // Show/Hide login section with animation
+        function showLogin() {
+            dashboardSection.classList.add('hidden');
+            loginSection.classList.remove('hidden');
+            setTimeout(() => {
+                const card = loginSection.querySelector('.card');
+                if (card) card.classList.add('show');
+            }, 100);
+        }
+
+        // Show/Hide dashboard with animation
+        function showDashboard() {
+            loginSection.classList.add('hidden');
+            dashboardSection.classList.remove('hidden');
+            setTimeout(() => {
+                const card = dashboardSection.querySelector('.card');
+                if (card) card.classList.add('show');
+                
+                // Animate sections
+                const sections = dashboardSection.querySelectorAll('.section');
+                sections.forEach((section, index) => {
+                    setTimeout(() => {
+                        section.classList.add('show');
+                    }, index * 100 + 200);
+                });
+                
+                // Animate profile items
+                const profileItems = dashboardSection.querySelectorAll('.profile-item');
+                profileItems.forEach((item, index) => {
+                    setTimeout(() => {
+                        item.classList.add('show');
+                    }, index * 50 + 500);
+                });
+            }, 100);
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
+            showLoading('Checking User Session...');
             checkUserSession();
             setupEventListeners();
             
@@ -1118,6 +1283,8 @@
             
             if (savedUser && user) {
                 try {
+                    showLoading('Verifying Session...');
+                    
                     // Verify the user is still logged in
                     const userDoc = await getDoc(doc(db, 'users', user.uid));
                     
@@ -1128,6 +1295,7 @@
                         if (userData.status === 'blocked') {
                             await signOut(auth);
                             localStorage.removeItem('firebaseUser');
+                            hideLoading();
                             showLogin();
                             showMessage(loginMessage, 'Your account has been blocked. Please contact administrator.', 'error');
                             return;
@@ -1144,25 +1312,32 @@
                         loadUserProfile();
                         loadUserVideos();
                         startVideoRealtimeUpdates();
+                        hideLoading();
                     } else {
                         // User document not found
                         await signOut(auth);
                         localStorage.removeItem('firebaseUser');
+                        hideLoading();
                         showLogin();
                         showMessage(loginMessage, 'Session expired. Please login again.', 'warning');
                     }
                 } catch (e) {
                     localStorage.removeItem('firebaseUser');
+                    hideLoading();
                     showLogin();
                 }
             } else {
-                showLogin();
+                setTimeout(() => {
+                    hideLoading();
+                    showLogin();
+                }, 500);
             }
         }
 
         // Check user status
         async function checkUserStatus(user) {
             try {
+                showLoading('Loading User Profile...');
                 const userDoc = await getDoc(doc(db, 'users', user.uid));
                 if (userDoc.exists()) {
                     userData = userDoc.data();
@@ -1171,6 +1346,7 @@
                     if (userData.status === 'blocked') {
                         await signOut(auth);
                         localStorage.removeItem('firebaseUser');
+                        hideLoading();
                         showLogin();
                         showMessage(loginMessage, 'Your account has been blocked. Please contact administrator.', 'error');
                         return false;
@@ -1186,14 +1362,19 @@
                     // Save user session
                     localStorage.setItem('firebaseUser', JSON.stringify(currentUser));
                     
+                    // Track this login device
+                    await trackUserLogin(user);
+                    
                     showDashboard();
                     loadUserProfile();
                     loadUserVideos();
                     startVideoRealtimeUpdates();
+                    hideLoading();
                     return true;
                 }
             } catch (error) {
                 console.error('Error checking user status:', error);
+                hideLoading();
             }
             return false;
         }
@@ -1371,6 +1552,7 @@
             }
             
             try {
+                showLoading('Authenticating...');
                 loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
                 loginBtn.disabled = true;
                 
@@ -1387,6 +1569,9 @@
                     // ইউজারের স্ট্যাটাস চেক করুন
                     if (userData.status === 'blocked') {
                         await signOut(auth);
+                        hideLoading();
+                        loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+                        loginBtn.disabled = false;
                         showMessage(loginMessage, 'Your account has been blocked. Please contact administrator.', 'error');
                         return;
                     }
@@ -1413,10 +1598,14 @@
                         loadUserProfile();
                         loadUserVideos();
                         startVideoRealtimeUpdates();
+                        hideLoading();
                     }, 1000);
                 } else {
                     // User document not found
                     await signOut(auth);
+                    hideLoading();
+                    loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+                    loginBtn.disabled = false;
                     showMessage(loginMessage, 'User not found in database.', 'error');
                 }
             } catch (error) {
@@ -1437,15 +1626,17 @@
                     errorMessage = 'Too many failed login attempts. Please try again later.';
                 }
                 
-                showMessage(loginMessage, errorMessage, 'error');
-            } finally {
+                hideLoading();
                 loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
                 loginBtn.disabled = false;
+                showMessage(loginMessage, errorMessage, 'error');
             }
         }
 
         // Logout handler
         async function handleLogout() {
+            showLoading('Logging out...');
+            
             if (videoSnapshotUnsubscribe) {
                 videoSnapshotUnsubscribe();
             }
@@ -1455,8 +1646,12 @@
             localStorage.removeItem('firebaseUser');
             currentUser = null;
             userData = null;
-            showMessage(loginMessage, 'You have been logged out successfully', 'info');
-            showLogin();
+            
+            setTimeout(() => {
+                hideLoading();
+                showMessage(loginMessage, 'You have been logged out successfully', 'info');
+                showLogin();
+            }, 500);
         }
 
         // Load user profile
@@ -1534,11 +1729,11 @@
                     // Sort devices by last login (newest first)
                     devices.sort((a, b) => new Date(b.lastLogin) - new Date(a.lastLogin));
                     
-                    devices.forEach(device => {
+                    devices.forEach((device, index) => {
                         const loginTime = new Date(device.lastLogin).toLocaleString();
                         
                         devicesHTML += `
-                            <div class="device-card">
+                            <div class="device-card" style="transition-delay: ${index * 50}ms">
                                 <div class="device-header">
                                     <div class="device-name">
                                         <i class="fas fa-${device.os && device.os.includes('Windows') ? 'desktop' : 
@@ -1573,6 +1768,14 @@
                     });
                     
                     devicesContainer.innerHTML = devicesHTML;
+                    
+                    // Animate device cards
+                    setTimeout(() => {
+                        const deviceCards = devicesContainer.querySelectorAll('.device-card');
+                        deviceCards.forEach(card => {
+                            card.classList.add('show');
+                        });
+                    }, 100);
                 }
             } catch (error) {
                 console.error('Error loading devices:', error);
@@ -1589,6 +1792,7 @@
         // Load videos for user (only public videos)
         async function loadUserVideos() {
             try {
+                showLoading('Loading Videos...');
                 console.log('Loading videos for user...');
                 
                 // Let's get all videos and filter client-side to avoid index issues
@@ -1696,9 +1900,10 @@
             
             videosContainer.innerHTML = '';
             
-            videos.forEach((video) => {
+            videos.forEach((video, index) => {
                 const card = document.createElement('div');
                 card.className = 'video-card';
+                card.style.transitionDelay = `${index * 50}ms`;
                 
                 // Format the timestamp
                 let createdAt = 'N/A';
@@ -1753,6 +1958,14 @@
                 
                 videosContainer.appendChild(card);
             });
+            
+            // Animate video cards
+            setTimeout(() => {
+                const videoCards = videosContainer.querySelectorAll('.video-card');
+                videoCards.forEach(card => {
+                    card.classList.add('show');
+                });
+            }, 100);
             
             // Add event listeners to video play buttons
             addVideoPlayListeners();
@@ -1812,6 +2025,8 @@
         // Play video in v.html page
         async function playUserVideo(video) {
             try {
+                showLoading('Opening Video...');
+                
                 // ভিউ কাউন্ট ইনক্রিমেন্ট করুন
                 const videoRef = doc(db, 'videos', video.id);
                 await updateDoc(videoRef, {
@@ -1831,11 +2046,14 @@
                 if (youtubeId) {
                     // v.html পেজে রিডাইরেক্ট করুন
                     window.open(`v.html?videoId=${video.id}`, '_blank');
+                    hideLoading();
                 } else {
+                    hideLoading();
                     showMessage(dashboardMessage, 'ভিডিওটি প্লে করা সম্ভব নয়।', 'error');
                 }
             } catch (error) {
                 console.error('Error playing video:', error);
+                hideLoading();
                 showMessage(dashboardMessage, 'ভিডিও লোড করতে সমস্যা।', 'error');
             }
         }
@@ -1873,6 +2091,7 @@
             }
             
             try {
+                showLoading('Changing Password...');
                 changePasswordBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Changing...';
                 changePasswordBtn.disabled = true;
                 
@@ -1891,6 +2110,7 @@
                 document.getElementById('confirmPassword').value = '';
                 
                 // Show success message
+                hideLoading();
                 showMessage(passwordMessage, 'Password changed successfully!', 'success');
                 
                 // Close modal after 2 seconds
@@ -1911,6 +2131,7 @@
                     errorMessage = 'Please login again to change your password.';
                 }
                 
+                hideLoading();
                 showMessage(passwordMessage, errorMessage, 'error');
             } finally {
                 changePasswordBtn.innerHTML = '<i class="fas fa-save"></i> Change Password';
@@ -1918,31 +2139,16 @@
             }
         }
 
-        // Show dashboard
-        function showDashboard() {
-            loginSection.classList.add('hidden');
-            dashboardSection.classList.remove('hidden');
-        }
-
-        // Show login
-        function showLogin() {
-            loginSection.classList.remove('hidden');
-            dashboardSection.classList.add('hidden');
-            // Clear the form
-            document.getElementById('loginEmail').value = '';
-            document.getElementById('loginPassword').value = '';
-        }
-
         // Show message function
         function showMessage(element, message, type) {
             element.textContent = message;
             element.className = `message message-${type}`;
-            element.style.display = 'flex';
+            element.classList.add('show');
             
             // Auto-hide success messages after 5 seconds
             if (type === 'success') {
                 setTimeout(() => {
-                    element.style.display = 'none';
+                    element.classList.remove('show');
                 }, 5000);
             }
         }
