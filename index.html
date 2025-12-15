@@ -36,12 +36,181 @@
             padding: 15px;
         }
 
+        /* Loading System Styles */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loader-container {
+            text-align: center;
+            padding: 40px;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+            max-width: 400px;
+            width: 90%;
+            animation: fadeInUp 0.6s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loader {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 25px;
+            position: relative;
+        }
+
+        .loader-circle {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 8px solid transparent;
+            border-top-color: #4361ee;
+            border-right-color: #4361ee;
+            animation: spin 1.2s linear infinite;
+        }
+
+        .loader-inner {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            bottom: 15px;
+            border-radius: 50%;
+            border: 6px solid transparent;
+            border-top-color: #3f37c9;
+            border-right-color: #3f37c9;
+            animation: spinReverse 0.9s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes spinReverse {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(-360deg);
+            }
+        }
+
+        .loader-logo {
+            margin-bottom: 20px;
+            font-size: 2.5rem;
+            color: #4361ee;
+        }
+
+        .loader-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .loader-subtext {
+            color: #6b7280;
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+        }
+
+        .loader-progress {
+            height: 6px;
+            background-color: #e5e7eb;
+            border-radius: 3px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .loader-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4361ee, #4cc9f0);
+            border-radius: 3px;
+            width: 0%;
+            animation: progressAnimation 2s ease-in-out infinite;
+        }
+
+        @keyframes progressAnimation {
+            0% {
+                width: 0%;
+                margin-left: 0;
+            }
+            50% {
+                width: 70%;
+                margin-left: 30%;
+            }
+            100% {
+                width: 0%;
+                margin-left: 100%;
+            }
+        }
+
+        .loader-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+            font-size: 0.85rem;
+            color: #6b7280;
+        }
+
+        .loader-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .loader-stat-value {
+            font-weight: 700;
+            color: #4361ee;
+            font-size: 1.1rem;
+        }
+
         .container {
             width: 100%;
             max-width: 1200px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            opacity: 0;
+            animation: fadeIn 0.5s ease forwards;
+            animation-delay: 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         .header {
@@ -825,6 +994,42 @@
     </style>
 </head>
 <body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loader-container">
+            <div class="loader-logo">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            
+            <div class="loader">
+                <div class="loader-circle"></div>
+                <div class="loader-inner"></div>
+            </div>
+            
+            <div class="loader-text">Loading User Portal</div>
+            <div class="loader-subtext" id="loadingMessage">Checking authentication status...</div>
+            
+            <div class="loader-progress">
+                <div class="loader-progress-bar"></div>
+            </div>
+            
+            <div class="loader-stats">
+                <div class="loader-stat">
+                    <span class="loader-stat-value" id="loadingStep">1</span>
+                    <span>Step</span>
+                </div>
+                <div class="loader-stat">
+                    <span class="loader-stat-value" id="loadingStatus">0%</span>
+                    <span>Complete</span>
+                </div>
+                <div class="loader-stat">
+                    <span class="loader-stat-value" id="loadingTime">0s</span>
+                    <span>Time</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <div class="header">
             <h1><i class="fas fa-user-circle"></i> User Login Portal</h1>
@@ -1062,6 +1267,12 @@
         const db = getFirestore(app);
 
         // DOM Elements
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingMessage = document.getElementById('loadingMessage');
+        const loadingStep = document.getElementById('loadingStep');
+        const loadingStatus = document.getElementById('loadingStatus');
+        const loadingTime = document.getElementById('loadingTime');
+        
         const loginSection = document.getElementById('loginSection');
         const dashboardSection = document.getElementById('dashboardSection');
         const loginBtn = document.getElementById('loginBtn');
@@ -1098,17 +1309,93 @@
         let videoSnapshotUnsubscribe = null;
         let allVideos = [];
 
+        // Loading system variables
+        let loadingStartTime = null;
+        let loadingInterval = null;
+        let loadingStepCounter = 1;
+        let loadingProgressCounter = 0;
+
+        // Loading system functions
+        function showLoading(message = 'Loading...') {
+            loadingOverlay.classList.remove('hidden');
+            loadingMessage.textContent = message;
+            loadingStartTime = Date.now();
+            loadingStepCounter = 1;
+            loadingProgressCounter = 0;
+            
+            // Update loading timer
+            if (loadingInterval) clearInterval(loadingInterval);
+            loadingInterval = setInterval(updateLoadingTimer, 100);
+            
+            // Start progress simulation
+            simulateLoadingProgress();
+        }
+
+        function hideLoading() {
+            // Add a small delay to ensure everything is loaded
+            setTimeout(() => {
+                loadingOverlay.classList.add('hidden');
+                if (loadingInterval) {
+                    clearInterval(loadingInterval);
+                    loadingInterval = null;
+                }
+            }, 500);
+        }
+
+        function updateLoadingTimer() {
+            if (!loadingStartTime) return;
+            
+            const currentTime = Date.now();
+            const elapsedSeconds = Math.floor((currentTime - loadingStartTime) / 1000);
+            
+            loadingTime.textContent = `${elapsedSeconds}s`;
+        }
+
+        function simulateLoadingProgress() {
+            const steps = [
+                'Checking authentication status...',
+                'Connecting to database...',
+                'Loading user profile...',
+                'Retrieving devices...',
+                'Loading video content...',
+                'Finalizing dashboard...'
+            ];
+            
+            let currentStep = 0;
+            const totalSteps = steps.length;
+            
+            const progressInterval = setInterval(() => {
+                if (currentStep >= totalSteps) {
+                    clearInterval(progressInterval);
+                    return;
+                }
+                
+                // Update loading message and step
+                loadingMessage.textContent = steps[currentStep];
+                loadingStep.textContent = currentStep + 1;
+                
+                // Update progress percentage
+                const progressPercentage = Math.round(((currentStep + 1) / totalSteps) * 100);
+                loadingStatus.textContent = `${progressPercentage}%`;
+                
+                currentStep++;
+            }, 800); // Change step every 800ms
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
-            checkUserSession();
-            setupEventListeners();
-            
-            // Check auth state
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    checkUserStatus(user);
-                }
-            });
+            showLoading('Initializing user portal...');
+            setTimeout(() => {
+                checkUserSession();
+                setupEventListeners();
+                
+                // Check auth state
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        checkUserStatus(user);
+                    }
+                });
+            }, 1000);
         });
 
         // Check if user is already logged in
@@ -1118,6 +1405,8 @@
             
             if (savedUser && user) {
                 try {
+                    showLoading('Restoring your session...');
+                    
                     // Verify the user is still logged in
                     const userDoc = await getDoc(doc(db, 'users', user.uid));
                     
@@ -1128,6 +1417,7 @@
                         if (userData.status === 'blocked') {
                             await signOut(auth);
                             localStorage.removeItem('firebaseUser');
+                            hideLoading();
                             showLogin();
                             showMessage(loginMessage, 'Your account has been blocked. Please contact administrator.', 'error');
                             return;
@@ -1140,22 +1430,29 @@
                             loginTime: new Date().toISOString()
                         };
                         
+                        // Track this login device
+                        await trackUserLogin(user);
+                        
                         showDashboard();
                         loadUserProfile();
                         loadUserVideos();
                         startVideoRealtimeUpdates();
+                        hideLoading();
                     } else {
                         // User document not found
                         await signOut(auth);
                         localStorage.removeItem('firebaseUser');
+                        hideLoading();
                         showLogin();
                         showMessage(loginMessage, 'Session expired. Please login again.', 'warning');
                     }
                 } catch (e) {
                     localStorage.removeItem('firebaseUser');
+                    hideLoading();
                     showLogin();
                 }
             } else {
+                hideLoading();
                 showLogin();
             }
         }
@@ -1163,6 +1460,8 @@
         // Check user status
         async function checkUserStatus(user) {
             try {
+                showLoading('Verifying user credentials...');
+                
                 const userDoc = await getDoc(doc(db, 'users', user.uid));
                 if (userDoc.exists()) {
                     userData = userDoc.data();
@@ -1171,6 +1470,7 @@
                     if (userData.status === 'blocked') {
                         await signOut(auth);
                         localStorage.removeItem('firebaseUser');
+                        hideLoading();
                         showLogin();
                         showMessage(loginMessage, 'Your account has been blocked. Please contact administrator.', 'error');
                         return false;
@@ -1183,6 +1483,9 @@
                         loginTime: new Date().toISOString()
                     };
                     
+                    // Track this login device
+                    await trackUserLogin(user);
+                    
                     // Save user session
                     localStorage.setItem('firebaseUser', JSON.stringify(currentUser));
                     
@@ -1190,11 +1493,14 @@
                     loadUserProfile();
                     loadUserVideos();
                     startVideoRealtimeUpdates();
+                    hideLoading();
                     return true;
                 }
             } catch (error) {
                 console.error('Error checking user status:', error);
             }
+            
+            hideLoading();
             return false;
         }
 
@@ -1371,6 +1677,7 @@
             }
             
             try {
+                showLoading('Authenticating user credentials...');
                 loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
                 loginBtn.disabled = true;
                 
@@ -1387,6 +1694,7 @@
                     // ইউজারের স্ট্যাটাস চেক করুন
                     if (userData.status === 'blocked') {
                         await signOut(auth);
+                        hideLoading();
                         showMessage(loginMessage, 'Your account has been blocked. Please contact administrator.', 'error');
                         return;
                     }
@@ -1409,6 +1717,7 @@
                     
                     // Show dashboard
                     setTimeout(() => {
+                        hideLoading();
                         showDashboard();
                         loadUserProfile();
                         loadUserVideos();
@@ -1417,10 +1726,12 @@
                 } else {
                     // User document not found
                     await signOut(auth);
+                    hideLoading();
                     showMessage(loginMessage, 'User not found in database.', 'error');
                 }
             } catch (error) {
                 console.error('Login error:', error);
+                hideLoading();
                 let errorMessage = 'Login failed. Please try again.';
                 
                 if (error.code === 'auth/invalid-credential') {
@@ -1450,13 +1761,19 @@
                 videoSnapshotUnsubscribe();
             }
             
+            showLoading('Logging out...');
+            
             // Sign out from Firebase
             await signOut(auth);
             localStorage.removeItem('firebaseUser');
             currentUser = null;
             userData = null;
-            showMessage(loginMessage, 'You have been logged out successfully', 'info');
-            showLogin();
+            
+            setTimeout(() => {
+                hideLoading();
+                showMessage(loginMessage, 'You have been logged out successfully', 'info');
+                showLogin();
+            }, 1000);
         }
 
         // Load user profile
@@ -1464,6 +1781,8 @@
             if (!currentUser || !userData) return;
             
             try {
+                showLoading('Loading your profile...');
+                
                 // Update profile information
                 profileName.textContent = userData.name || 'Not provided';
                 profileEmail.textContent = userData.email || 'Not provided';
@@ -1513,6 +1832,8 @@
             if (!currentUser || !userData) return;
             
             try {
+                showLoading('Loading your devices...');
+                
                 // Get the latest user data from Firestore
                 const userRef = doc(db, 'users', currentUser.uid);
                 const userDoc = await getDoc(userRef);
@@ -1589,6 +1910,8 @@
         // Load videos for user (only public videos)
         async function loadUserVideos() {
             try {
+                showLoading('Loading available videos...');
+                
                 console.log('Loading videos for user...');
                 
                 // Let's get all videos and filter client-side to avoid index issues
@@ -1768,6 +2091,8 @@
                     }
                 });
             });
+            
+            hideLoading();
         }
 
         // Add event listeners to video play buttons
@@ -1812,6 +2137,8 @@
         // Play video in v.html page
         async function playUserVideo(video) {
             try {
+                showLoading('Opening video...');
+                
                 // ভিউ কাউন্ট ইনক্রিমেন্ট করুন
                 const videoRef = doc(db, 'videos', video.id);
                 await updateDoc(videoRef, {
@@ -1830,12 +2157,15 @@
                 
                 if (youtubeId) {
                     // v.html পেজে রিডাইরেক্ট করুন
+                    hideLoading();
                     window.open(`v.html?videoId=${video.id}`, '_blank');
                 } else {
+                    hideLoading();
                     showMessage(dashboardMessage, 'ভিডিওটি প্লে করা সম্ভব নয়।', 'error');
                 }
             } catch (error) {
                 console.error('Error playing video:', error);
+                hideLoading();
                 showMessage(dashboardMessage, 'ভিডিও লোড করতে সমস্যা।', 'error');
             }
         }
@@ -1873,6 +2203,7 @@
             }
             
             try {
+                showLoading('Changing password...');
                 changePasswordBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Changing...';
                 changePasswordBtn.disabled = true;
                 
@@ -1896,11 +2227,13 @@
                 // Close modal after 2 seconds
                 setTimeout(() => {
                     changePasswordModal.classList.add('hidden');
+                    hideLoading();
                     showMessage(dashboardMessage, 'Password changed successfully!', 'success');
                 }, 2000);
                 
             } catch (error) {
                 console.error('Password change error:', error);
+                hideLoading();
                 let errorMessage = 'Failed to change password. Please try again.';
                 
                 if (error.code === 'auth/wrong-password') {
