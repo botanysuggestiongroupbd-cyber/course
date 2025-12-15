@@ -288,6 +288,17 @@
             box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
         }
 
+        .btn-google {
+            background-color: #db4437;
+            color: white;
+        }
+
+        .btn-google:hover:not(:disabled) {
+            background-color: #c33c2f;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(219, 68, 55, 0.3);
+        }
+
         .btn-success {
             background-color: var(--success-color);
             color: white;
@@ -392,6 +403,31 @@
             font-size: 3rem;
             color: var(--primary-color);
             margin-bottom: 15px;
+        }
+
+        .login-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .divider span {
+            padding: 0 15px;
+            color: var(--gray-color);
+            font-size: 0.9rem;
         }
 
         .user-profile-container {
@@ -972,7 +1008,15 @@
                         </div>
                         
                         <button id="loginBtn" class="btn btn-primary">
-                            <i class="fas fa-sign-in-alt"></i> Login
+                            <i class="fas fa-sign-in-alt"></i> Login with Email
+                        </button>
+                        
+                        <div class="divider">
+                            <span>OR</span>
+                        </div>
+                        
+                        <button id="googleLoginBtn" class="btn btn-google">
+                            <i class="fab fa-google"></i> Login with Google
                         </button>
                         
                         <div class="admin-link">
@@ -1135,6 +1179,8 @@
         import { 
             getAuth, 
             signInWithEmailAndPassword,
+            signInWithPopup,
+            GoogleAuthProvider,
             signOut,
             onAuthStateChanged,
             updatePassword,
@@ -1170,12 +1216,14 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        const googleProvider = new GoogleAuthProvider();
 
         // DOM Elements
         const loadingScreen = document.getElementById('loading-screen');
         const loginSection = document.getElementById('loginSection');
         const dashboardSection = document.getElementById('dashboardSection');
         const loginBtn = document.getElementById('loginBtn');
+        const googleLoginBtn = document.getElementById('googleLoginBtn');
         const logoutBtn = document.getElementById('logoutBtn');
         const loginMessage = document.getElementById('loginMessage');
         const dashboardMessage = document.getElementById('dashboardMessage');
@@ -1381,7 +1429,8 @@
 
         // Setup event listeners
         function setupEventListeners() {
-            loginBtn.addEventListener('click', handleUserLogin);
+            loginBtn.addEventListener('click', handleEmailLogin);
+            googleLoginBtn.addEventListener('click', handleGoogleLogin);
             logoutBtn.addEventListener('click', handleLogout);
             closePasswordModal.addEventListener('click', () => {
                 changePasswordModal.classList.add('hidden');
@@ -1399,7 +1448,7 @@
             // Enter key for login
             document.getElementById('loginPassword').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
-                    handleUserLogin();
+                    handleEmailLogin();
                 }
             });
             
@@ -1535,8 +1584,8 @@
             }
         }
 
-        // User login handler
-        async function handleUserLogin() {
+        // Email login handler
+        async function handleEmailLogin() {
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
             
@@ -1570,7 +1619,7 @@
                     if (userData.status === 'blocked') {
                         await signOut(auth);
                         hideLoading();
-                        loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+                        loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login with Email';
                         loginBtn.disabled = false;
                         showMessage(loginMessage, 'Your account has been blocked. Please contact administrator.', 'error');
                         return;
@@ -1604,7 +1653,7 @@
                     // User document not found
                     await signOut(auth);
                     hideLoading();
-                    loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+                    loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login with Email';
                     loginBtn.disabled = false;
                     showMessage(loginMessage, 'User not found in database.', 'error');
                 }
@@ -1627,8 +1676,94 @@
                 }
                 
                 hideLoading();
-                loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login';
+                loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login with Email';
                 loginBtn.disabled = false;
+                showMessage(loginMessage, errorMessage, 'error');
+            }
+        }
+
+        // Google login handler
+        async function handleGoogleLogin() {
+            try {
+                showLoading('Connecting to Google...');
+                googleLoginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
+                googleLoginBtn.disabled = true;
+                
+                const result = await signInWithPopup(auth, googleProvider);
+                const user = result.user;
+                
+                // Check if user exists in Firestore
+                const userDoc = await getDoc(doc(db, 'users', user.uid));
+                
+                if (!userDoc.exists()) {
+                    // Create new user document if doesn't exist
+                    const newUser = {
+                        email: user.email,
+                        name: user.displayName || 'Google User',
+                        phone: user.phoneNumber || '',
+                        role: 'user',
+                        status: 'active',
+                        createdAt: serverTimestamp(),
+                        lastLogin: serverTimestamp(),
+                        loginDevices: []
+                    };
+                    
+                    await updateDoc(doc(db, 'users', user.uid), newUser);
+                    userData = newUser;
+                } else {
+                    userData = userDoc.data();
+                    
+                    // Check if user is blocked
+                    if (userData.status === 'blocked') {
+                        await signOut(auth);
+                        hideLoading();
+                        googleLoginBtn.innerHTML = '<i class="fab fa-google"></i> Login with Google';
+                        googleLoginBtn.disabled = false;
+                        showMessage(loginMessage, 'Your account has been blocked. Please contact administrator.', 'error');
+                        return;
+                    }
+                }
+                
+                currentUser = {
+                    email: user.email,
+                    uid: user.uid,
+                    role: userData.role || 'user',
+                    loginTime: new Date().toISOString()
+                };
+                
+                // Track this login device
+                await trackUserLogin(user);
+                
+                // Save user session
+                localStorage.setItem('firebaseUser', JSON.stringify(currentUser));
+                
+                // Show success message
+                showMessage(loginMessage, `Welcome ${userData.name || user.email}!`, 'success');
+                
+                // Show dashboard
+                setTimeout(() => {
+                    showDashboard();
+                    loadUserProfile();
+                    loadUserVideos();
+                    startVideoRealtimeUpdates();
+                    hideLoading();
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Google login error:', error);
+                let errorMessage = 'Google login failed. Please try again.';
+                
+                if (error.code === 'auth/popup-closed-by-user') {
+                    errorMessage = 'Login cancelled.';
+                } else if (error.code === 'auth/popup-blocked') {
+                    errorMessage = 'Popup was blocked by your browser. Please allow popups for this site.';
+                } else if (error.code === 'auth/unauthorized-domain') {
+                    errorMessage = 'This domain is not authorized for Google login.';
+                }
+                
+                hideLoading();
+                googleLoginBtn.innerHTML = '<i class="fab fa-google"></i> Login with Google';
+                googleLoginBtn.disabled = false;
                 showMessage(loginMessage, errorMessage, 'error');
             }
         }
@@ -2154,4 +2289,4 @@
         }
     </script>
 </body>
-    </html>
+                            </html>
