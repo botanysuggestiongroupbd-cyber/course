@@ -67,7 +67,7 @@
       line-height: 1.6;
     }
     
-    #login-btn, #logout-btn {
+    #login-btn {
       padding: 14px 28px;
       background: #007bff;
       color: white;
@@ -80,24 +80,10 @@
       box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
     }
     
-    #login-btn:hover, #logout-btn:hover {
+    #login-btn:hover {
       background: #0056b3;
       transform: translateY(-2px);
       box-shadow: 0 6px 16px rgba(0, 123, 255, 0.4);
-    }
-    
-    #logout-btn {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: #dc3545;
-      z-index: 999;
-      padding: 10px 20px;
-      display: none;
-    }
-    
-    #logout-btn:hover {
-      background: #c82333;
     }
     
     #player {
@@ -184,14 +170,7 @@
         font-size: 16px;
       }
       
-      #logout-btn {
-        top: 10px;
-        right: 10px;
-        padding: 8px 16px;
-        font-size: 14px;
-      }
-      
-      #login-btn, #logout-btn {
+      #login-btn {
         padding: 12px 24px;
         font-size: 15px;
       }
@@ -213,9 +192,6 @@
     <p>Please login with your Google account to access the video content.</p>
     <button id="login-btn">Login with Google</button>
   </div>
-  
-  <!-- Logout Button -->
-  <button id="logout-btn">Logout</button>
   
   <!-- Video Player -->
   <div id="player" data-plyr-provider="youtube" data-plyr-embed-id=""></div>
@@ -259,7 +235,6 @@
     const authMessage = document.getElementById('auth-message');
     const playerElement = document.getElementById('player');
     const loginBtn = document.getElementById('login-btn');
-    const logoutBtn = document.getElementById('logout-btn');
 
     // Get Firestore video ID from URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -301,7 +276,6 @@
       hideLoading();
       setTimeout(() => {
         playerElement.classList.add('show');
-        logoutBtn.style.display = 'block';
       }, 100);
     }
     
@@ -316,21 +290,6 @@
         hideLoading();
         authMessage.classList.add('show');
         alert("Login failed: " + error.message);
-      }
-    }
-
-    // Logout function
-    async function logout() {
-      try {
-        showLoading();
-        playerElement.classList.remove('show');
-        logoutBtn.style.display = 'none';
-        await signOut(auth);
-        console.log("Logged out");
-        showAuthMessage();
-      } catch (error) {
-        console.error("Logout error:", error);
-        hideLoading();
       }
     }
     
@@ -386,7 +345,7 @@
             'fullscreen'
           ],
           settings: ['captions', 'quality', 'speed'],
-          hideControls: true, // কন্ট্রোলার স্বয়ংক্রিয়ভাবে হাইড হবে
+          hideControls: true,
           keyboard: { focused: true, global: true },
           tooltips: { controls: true, seek: true },
           autoplay: false,
@@ -541,7 +500,6 @@
 
     // Event listeners
     loginBtn.addEventListener('click', login);
-    logoutBtn.addEventListener('click', logout);
 
     // Resize handler for better mobile experience
     window.addEventListener('resize', () => {
