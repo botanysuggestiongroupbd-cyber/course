@@ -67,7 +67,7 @@
       line-height: 1.6;
     }
     
-    #login-btn {
+    #login-btn, #back-btn {
       padding: 14px 28px;
       background: #007bff;
       color: white;
@@ -78,12 +78,30 @@
       font-weight: bold;
       transition: all 0.3s ease;
       box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
     }
     
-    #login-btn:hover {
+    #login-btn:hover, #back-btn:hover {
       background: #0056b3;
       transform: translateY(-2px);
       box-shadow: 0 6px 16px rgba(0, 123, 255, 0.4);
+    }
+    
+    #back-btn {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #28a745;
+      z-index: 999;
+      padding: 12px 24px;
+      display: none;
+    }
+    
+    #back-btn:hover {
+      background: #218838;
     }
     
     #player {
@@ -170,9 +188,27 @@
         font-size: 16px;
       }
       
-      #login-btn {
+      #login-btn, #back-btn {
         padding: 12px 24px;
         font-size: 15px;
+      }
+      
+      #back-btn {
+        bottom: 15px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        max-width: 300px;
+      }
+    }
+    
+    /* ডেস্কটপের জন্য */
+    @media (min-width: 769px) {
+      #back-btn {
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        min-width: 150px;
       }
     }
   </style>
@@ -192,6 +228,9 @@
     <p>Please login with your Google account to access the video content.</p>
     <button id="login-btn">Login with Google</button>
   </div>
+  
+  <!-- Back Button -->
+  <button id="back-btn">Back to Home</button>
   
   <!-- Video Player -->
   <div id="player" data-plyr-provider="youtube" data-plyr-embed-id=""></div>
@@ -235,6 +274,7 @@
     const authMessage = document.getElementById('auth-message');
     const playerElement = document.getElementById('player');
     const loginBtn = document.getElementById('login-btn');
+    const backBtn = document.getElementById('back-btn');
 
     // Get Firestore video ID from URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -276,6 +316,7 @@
       hideLoading();
       setTimeout(() => {
         playerElement.classList.add('show');
+        backBtn.style.display = 'block';
       }, 100);
     }
     
@@ -291,6 +332,11 @@
         authMessage.classList.add('show');
         alert("Login failed: " + error.message);
       }
+    }
+    
+    // Back button function
+    function goToHome() {
+      window.location.href = 'index.html';
     }
     
     // Load video from Firestore
@@ -500,6 +546,7 @@
 
     // Event listeners
     loginBtn.addEventListener('click', login);
+    backBtn.addEventListener('click', goToHome);
 
     // Resize handler for better mobile experience
     window.addEventListener('resize', () => {
