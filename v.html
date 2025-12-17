@@ -132,39 +132,6 @@
       background: #000;
     }
     
-    /* ডাবল ট্যাপ ইন্ডিকেটর স্টাইল */
-    .tap-indicator {
-      position: absolute;
-      width: 80px;
-      height: 80px;
-      background: rgba(0, 123, 255, 0.7);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: bold;
-      font-size: 18px;
-      pointer-events: none;
-      z-index: 100;
-      opacity: 0;
-      transform: scale(0.5);
-      transition: opacity 0.3s, transform 0.3s;
-    }
-    
-    .tap-indicator.show {
-      opacity: 1;
-      transform: scale(1);
-    }
-    
-    .tap-indicator.backward {
-      background: rgba(255, 65, 54, 0.7);
-    }
-    
-    .tap-indicator.forward {
-      background: rgba(0, 200, 83, 0.7);
-    }
-    
     /* Smooth transitions */
     .fade-in {
       animation: fadeIn 0.5s ease forwards;
@@ -232,12 +199,6 @@
         transform: translateX(-50%);
         width: 90%;
         max-width: 300px;
-      }
-      
-      .tap-indicator {
-        width: 60px;
-        height: 60px;
-        font-size: 14px;
       }
     }
     
@@ -315,12 +276,6 @@
     const loginBtn = document.getElementById('login-btn');
     const backBtn = document.getElementById('back-btn');
 
-    // Global variables for new features
-    let player;
-    let lastTapTime = 0;
-    let tapCount = 0;
-    let lastTapX = 0;
-
     // Get Firestore video ID from URL
     const urlParams = new URLSearchParams(window.location.search);
     const firestoreVideoId = urlParams.get('videoId');
@@ -363,97 +318,6 @@
         playerElement.classList.add('show');
         backBtn.style.display = 'block';
       }, 100);
-    }
-    
-    // ১. ডাবল ট্যাপ/ক্লিক ফিচার
-    function initializeDoubleTapFeature() {
-      const container = player.elements.container;
-      
-      container.addEventListener('click', handleTap);
-      container.addEventListener('touchstart', handleTap);
-      
-      // Create tap indicators
-      const forwardIndicator = document.createElement('div');
-      forwardIndicator.className = 'tap-indicator forward';
-      forwardIndicator.innerHTML = '+10s';
-      forwardIndicator.style.display = 'none';
-      
-      const backwardIndicator = document.createElement('div');
-      backwardIndicator.className = 'tap-indicator backward';
-      backwardIndicator.innerHTML = '-10s';
-      backwardIndicator.style.display = 'none';
-      
-      container.appendChild(forwardIndicator);
-      container.appendChild(backwardIndicator);
-    }
-    
-    function handleTap(e) {
-      const currentTime = Date.now();
-      const isTouchEvent = e.type === 'touchstart';
-      const clientX = isTouchEvent ? e.touches[0].clientX : e.clientX;
-      const container = player.elements.container;
-      const rect = container.getBoundingClientRect();
-      const tapX = clientX - rect.left;
-      const containerWidth = rect.width;
-      
-      // ডাবল ট্যাপ ডিটেকশন (300ms এর মধ্যে দুইটি ট্যাপ)
-      if (currentTime - lastTapTime < 300) {
-        tapCount++;
-        if (tapCount === 2) {
-          // ডাবল ট্যাপ শনাক্ত হয়েছে
-          tapCount = 0;
-          
-          // বাম বা ডান সাইড চেক করুন
-          const isLeftSide = tapX < containerWidth / 2;
-          const isRightSide = !isLeftSide;
-          
-          // টাইম আপডেট করুন
-          if (isLeftSide) {
-            // বামে ট্যাপ: ১০ সেকেন্ড পিছিয়ে যান
-            player.currentTime = Math.max(0, player.currentTime - 10);
-            showTapIndicator('backward', tapX, clientY || e.clientY);
-          } else if (isRightSide) {
-            // ডানে ট্যাপ: ১০ সেকেন্ড এগিয়ে যান
-            player.currentTime = Math.min(player.duration, player.currentTime + 10);
-            showTapIndicator('forward', tapX, clientY || e.clientY);
-          }
-          
-          // কন্ট্রোলার দেখান
-          showControls();
-          
-          // ইভেন্ট প্রোপাগেশন বন্ধ করুন
-          e.preventDefault();
-          e.stopPropagation();
-          return false;
-        }
-      } else {
-        tapCount = 1;
-      }
-      
-      lastTapTime = currentTime;
-      lastTapX = tapX;
-    }
-    
-    function showTapIndicator(type, x, y) {
-      const container = player.elements.container;
-      const indicators = container.querySelectorAll('.tap-indicator');
-      const indicator = type === 'forward' ? indicators[0] : indicators[1];
-      
-      // পজিশন সেট করুন
-      const rect = container.getBoundingClientRect();
-      indicator.style.left = (x - 40) + 'px';
-      indicator.style.top = (y - 40) + 'px';
-      
-      // দেখান এবং হাইড করুন
-      indicator.style.display = 'flex';
-      indicator.classList.add('show');
-      
-      setTimeout(() => {
-        indicator.classList.remove('show');
-        setTimeout(() => {
-          indicator.style.display = 'none';
-        }, 300);
-      }, 800);
     }
     
     // Login function
@@ -506,7 +370,7 @@
         playerElement.setAttribute('data-plyr-embed-id', youtubeId);
         
         // Initialize Plyr player with autohide controls
-        player = new Plyr('#player', {
+        const player = new Plyr('#player', {
           fullscreen: {
             enabled: true,
             fallback: true,
@@ -539,9 +403,6 @@
           storage: { enabled: true, key: 'plyr' },
           loop: { active: false }
         });
-        
-        // Initialize new features
-        initializeDoubleTapFeature();
         
         // কাস্টম কন্ট্রোলার হাইড/শো লজিক
         let hideControlsTimeout;
