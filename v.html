@@ -400,6 +400,9 @@
     let currentQuality = 'auto';
     let qualityControlsVisible = false;
     let qualityControlsHideTimeout;
+    let currentYouTubeId = '';
+    let currentPlaybackTime = 0;
+    let isPlayerReady = false;
 
     // Get Firestore video ID from URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -447,65 +450,76 @@
       }, 100);
     }
     
-    // ১. ডাবল ট্যাপ/ক্লিক ফিচার
+    // ১. ডাবল ট্যাপ/ক্লিক ফিচার - ১০ সেকেন্ড এগিয়ে/পিছিয়ে
     function initializeDoubleTapFeature() {
       const container = player.elements.container;
       
-      container.addEventListener('click', handleTap);
-      container.addEventListener('touchstart', handleTap);
+      // Remove previous event listeners to avoid duplicates
+      container.removeEventListener('click', handleDoubleTap);
+      container.removeEventListener('touchstart', handleDoubleTap);
       
-      // Create tap indicators
-      const forwardIndicator = document.createElement('div');
-      forwardIndicator.className = 'tap-indicator forward';
-      forwardIndicator.innerHTML = '+10s';
-      forwardIndicator.style.display = 'none';
+      // Add new event listeners
+      container.addEventListener('click', handleDoubleTap);
+      container.addEventListener('touchstart', handleDoubleTap);
       
-      const backwardIndicator = document.createElement('div');
-      backwardIndicator.className = 'tap-indicator backward';
-      backwardIndicator.innerHTML = '-10s';
-      backwardIndicator.style.display = 'none';
-      
-      container.appendChild(forwardIndicator);
-      container.appendChild(backwardIndicator);
+      // Create tap indicators if they don't exist
+      if (!container.querySelector('.tap-indicator')) {
+        const forwardIndicator = document.createElement('div');
+        forwardIndicator.className = 'tap-indicator forward';
+        forwardIndicator.innerHTML = '+10s';
+        forwardIndicator.style.display = 'none';
+        
+        const backwardIndicator = document.createElement('div');
+        backwardIndicator.className = 'tap-indicator backward';
+        backwardIndicator.innerHTML = '-10s';
+        backwardIndicator.style.display = 'none';
+        
+        container.appendChild(forwardIndicator);
+        container.appendChild(backwardIndicator);
+      }
     }
     
-    function handleTap(e) {
+    function handleDoubleTap(e) {
+      // Prevent default behavior
+      e.preventDefault();
+      e.stopPropagation();
+      
       const currentTime = Date.now();
       const isTouchEvent = e.type === 'touchstart';
       const clientX = isTouchEvent ? e.touches[0].clientX : e.clientX;
+      const clientY = isTouchEvent ? e.touches[0].clientY : e.clientY;
+      
       const container = player.elements.container;
       const rect = container.getBoundingClientRect();
       const tapX = clientX - rect.left;
+      const tapY = clientY - rect.top;
       const containerWidth = rect.width;
       
-      // ডাবল ট্যাপ ডিটেকশন (300ms এর মধ্যে দুইটি ট্যাপ)
+      // Check for double tap (within 300ms)
       if (currentTime - lastTapTime < 300) {
         tapCount++;
         if (tapCount === 2) {
-          // ডাবল ট্যাপ শনাক্ত হয়েছে
+          // Double tap detected
           tapCount = 0;
           
-          // বাম বা ডান সাইড চেক করুন
+          // Determine which side was tapped
           const isLeftSide = tapX < containerWidth / 2;
-          const isRightSide = !isLeftSide;
           
-          // টাইম আপডেট করুন
           if (isLeftSide) {
-            // বামে ট্যাপ: ১০ সেকেন্ড পিছিয়ে যান
-            player.currentTime = Math.max(0, player.currentTime - 10);
-            showTapIndicator('backward', tapX, clientY || e.clientY);
-          } else if (isRightSide) {
-            // ডানে ট্যাপ: ১০ সেকেন্ড এগিয়ে যান
-            player.currentTime = Math.min(player.duration, player.currentTime + 10);
-            showTapIndicator('forward', tapX, clientY || e.clientY);
+            // Left side: Rewind 10 seconds
+            const newTime = Math.max(0, player.currentTime - 10);
+            player.currentTime = newTime;
+            showTapIndicator('backward', tapX, tapY);
+          } else {
+            // Right side: Forward 10 seconds
+            const newTime = Math.min(player.duration, player.currentTime + 10);
+            player.currentTime = newTime;
+            showTapIndicator('forward', tapX, tapY);
           }
           
-          // কন্ট্রোলার দেখান
+          // Show controls
           showControls();
           
-          // ইভেন্ট প্রোপাগেশন বন্ধ করুন
-          e.preventDefault();
-          e.stopPropagation();
           return false;
         }
       } else {
@@ -521,14 +535,15 @@
       const indicators = container.querySelectorAll('.tap-indicator');
       const indicator = type === 'forward' ? indicators[0] : indicators[1];
       
-      // পজিশন সেট করুন
-      const rect = container.getBoundingClientRect();
+      // Position the indicator
       indicator.style.left = (x - 40) + 'px';
       indicator.style.top = (y - 40) + 'px';
       
-      // দেখান এবং হাইড করুন
+      // Show and then hide
       indicator.style.display = 'flex';
-      indicator.classList.add('show');
+      setTimeout(() => {
+        indicator.classList.add('show');
+      }, 10);
       
       setTimeout(() => {
         indicator.classList.remove('show');
@@ -538,41 +553,50 @@
       }, 800);
     }
     
-    // ২. কোয়ালিটি কন্ট্রোল ফিচার
+    // ২. কোয়ালিটি কন্ট্রোল ফিচার (ওয়ার্কআরাউন্ড মেথড)
     function initializeQualityControls() {
       const container = player.elements.container;
       
-      // কোয়ালিটি কন্ট্রোলার তৈরি করুন
+      // Remove existing quality controls if any
+      const existingControls = container.querySelector('.quality-controls');
+      if (existingControls) {
+        existingControls.remove();
+      }
+      
+      // Create quality controls
       const qualityControls = document.createElement('div');
       qualityControls.className = 'quality-controls';
       qualityControls.innerHTML = `
-        <button class="quality-btn" id="quality-down">−</button>
+        <button class="quality-btn" id="quality-down" title="Decrease Quality">−</button>
         <div class="quality-display" id="quality-display">Auto</div>
-        <button class="quality-btn" id="quality-up">+</button>
+        <button class="quality-btn" id="quality-up" title="Increase Quality">+</button>
       `;
       
       container.appendChild(qualityControls);
       
-      // কোয়ালিটি কন্ট্রোলার ইভেন্ট লিসেনার
-      document.getElementById('quality-down').addEventListener('click', decreaseQuality);
-      document.getElementById('quality-up').addEventListener('click', increaseQuality);
+      // Add event listeners
+      document.getElementById('quality-down').addEventListener('click', (e) => {
+        e.stopPropagation();
+        decreaseQuality();
+      });
       
-      // প্লেয়ার কোয়ালিটি চেঞ্জ ইভেন্ট
-      player.on('qualitychange', updateQualityDisplay);
+      document.getElementById('quality-up').addEventListener('click', (e) => {
+        e.stopPropagation();
+        increaseQuality();
+      });
       
-      // মাউস মুভ হলে কোয়ালিটি কন্ট্রোলার দেখান
+      // Show quality controls on mouse/touch move
       container.addEventListener('mousemove', () => {
         if (!player.fullscreen.active) return;
         showQualityControls();
       });
       
-      // টাচ মুভ হলে কোয়ালিটি কন্ট্রোলার দেখান
       container.addEventListener('touchmove', () => {
         if (!player.fullscreen.active) return;
         showQualityControls();
       });
       
-      // Initialize quality display
+      // Update display initially
       updateQualityDisplay();
     }
     
@@ -583,10 +607,7 @@
       qualityControls.classList.add('show');
       qualityControlsVisible = true;
       
-      // Clear previous timeout
       clearTimeout(qualityControlsHideTimeout);
-      
-      // Set new timeout to hide after 3 seconds
       qualityControlsHideTimeout = setTimeout(() => {
         hideQualityControls();
       }, 3000);
@@ -603,55 +624,103 @@
     function updateQualityDisplay() {
       const display = document.getElementById('quality-display');
       if (display) {
-        // Get current quality from player
-        const quality = player.quality;
-        currentQuality = quality || 'auto';
-        
-        // Display friendly quality name
-        let displayText = currentQuality;
-        if (currentQuality === 'auto') displayText = 'Auto';
-        else if (currentQuality === '144p') displayText = '144p';
-        else if (currentQuality === '240p') displayText = '240p';
-        else if (currentQuality === '360p') displayText = '360p';
-        else if (currentQuality === '480p') displayText = '480p';
-        else if (currentQuality === '720p') displayText = '720p';
-        else if (currentQuality === '1080p') displayText = '1080p';
-        else if (currentQuality === '1440p') displayText = '1440p';
-        else if (currentQuality === '2160p') displayText = '4K';
-        
-        display.textContent = displayText;
+        display.textContent = currentQuality === 'auto' ? 'Auto' : currentQuality;
       }
     }
     
     function increaseQuality() {
+      // Quality levels for YouTube
       const qualities = ['144p', '240p', '360p', '480p', '720p', '1080p', '1440p', '2160p'];
-      const currentIndex = qualities.indexOf(currentQuality);
+      let currentIndex = qualities.indexOf(currentQuality);
       
+      // If current quality is auto, start from lowest
+      if (currentQuality === 'auto') {
+        currentIndex = 0;
+      }
+      
+      // Move to next higher quality
       if (currentIndex < qualities.length - 1) {
-        player.quality = qualities[currentIndex + 1];
-      } else if (currentQuality === 'auto') {
-        // If auto, try to set to highest available quality
-        const availableQualities = player.qualities;
-        if (availableQualities && availableQualities.length > 0) {
-          player.quality = availableQualities[availableQualities.length - 1];
-        }
+        changeYouTubeQuality(qualities[currentIndex + 1]);
+      } else if (currentIndex === -1) {
+        // If not found, set to 360p
+        changeYouTubeQuality('360p');
       }
       
       showQualityControls();
     }
     
     function decreaseQuality() {
+      // Quality levels for YouTube
       const qualities = ['144p', '240p', '360p', '480p', '720p', '1080p', '1440p', '2160p'];
-      const currentIndex = qualities.indexOf(currentQuality);
+      let currentIndex = qualities.indexOf(currentQuality);
       
+      // If current quality is auto, set to auto (lowest)
+      if (currentQuality === 'auto') {
+        return; // Already at auto
+      }
+      
+      // Move to next lower quality
       if (currentIndex > 0) {
-        player.quality = qualities[currentIndex - 1];
-      } else if (currentQuality !== 'auto') {
-        // If not already auto, set to auto
-        player.quality = 'auto';
+        changeYouTubeQuality(qualities[currentIndex - 1]);
+      } else if (currentIndex === 0) {
+        // If at lowest, set to auto
+        changeYouTubeQuality('auto');
+      } else if (currentIndex === -1) {
+        // If not found, set to auto
+        changeYouTubeQuality('auto');
       }
       
       showQualityControls();
+    }
+    
+    function changeYouTubeQuality(quality) {
+      if (!currentYouTubeId || !isPlayerReady) return;
+      
+      // Save current playback time
+      currentPlaybackTime = player.currentTime;
+      
+      // Map quality to YouTube parameters
+      const qualityMap = {
+        '144p': 'tiny',
+        '240p': 'small',
+        '360p': 'medium',
+        '480p': 'large',
+        '720p': 'hd720',
+        '1080p': 'hd1080',
+        '1440p': 'hd1440',
+        '2160p': 'hd2160',
+        'auto': 'auto'
+      };
+      
+      const youtubeQuality = qualityMap[quality] || 'auto';
+      currentQuality = quality;
+      
+      // Update display immediately
+      updateQualityDisplay();
+      
+      // Get the iframe element
+      const iframe = player.elements.container.querySelector('iframe');
+      if (!iframe) return;
+      
+      // Construct new YouTube URL with quality parameter
+      const newSrc = `https://www.youtube.com/embed/${currentYouTubeId}?autoplay=1&iv_load_policy=3&modestbranding=1&playsinline=1&showinfo=0&rel=0&enablejsapi=1&vq=${youtubeQuality}`;
+      
+      // Change the src of the iframe
+      iframe.src = newSrc;
+      
+      // Show loading indicator
+      showLoading();
+      
+      // Wait for iframe to load and restore playback time
+      iframe.onload = function() {
+        setTimeout(() => {
+          if (player && player.currentTime !== undefined) {
+            player.currentTime = currentPlaybackTime;
+            player.play().catch(e => console.log("Autoplay prevented:", e));
+          }
+          hideLoading();
+        }, 1000);
+      };
     }
     
     // Login function
@@ -700,10 +769,13 @@
           return;
         }
         
+        // Save YouTube ID globally
+        currentYouTubeId = youtubeId;
+        
         // Set YouTube ID to player
         playerElement.setAttribute('data-plyr-embed-id', youtubeId);
         
-        // Initialize Plyr player with autohide controls
+        // Initialize Plyr player
         player = new Plyr('#player', {
           fullscreen: {
             enabled: true,
@@ -736,19 +808,23 @@
           muted: false,
           storage: { enabled: true, key: 'plyr' },
           loop: { active: false },
-          quality: {
-            default: 'auto',
-            options: ['auto', '144p', '240p', '360p', '480p', '720p', '1080p', '1440p', '2160p'],
-            forced: true,
-            onChange: (quality) => {
-              currentQuality = quality;
-              updateQualityDisplay();
-            }
+          youtube: {
+            noCookie: true,
+            rel: 0,
+            showinfo: 0,
+            iv_load_policy: 3,
+            modestbranding: 1
           }
         });
         
-        // Initialize new features
-        initializeDoubleTapFeature();
+        // Mark player as ready when it loads
+        player.on('ready', () => {
+          isPlayerReady = true;
+          console.log('Player is ready');
+          
+          // Initialize double tap feature
+          initializeDoubleTapFeature();
+        });
         
         // কাস্টম কন্ট্রোলার হাইড/শো লজিক
         let hideControlsTimeout;
@@ -762,10 +838,10 @@
             controls.classList.add('plyr__controls--visible');
             controlsVisible = true;
             
-            // কোয়ালিটি কন্ট্রোলারও দেখান
+            // Show quality controls too
             showQualityControls();
             
-            // 3 সেকেন্ড পর আবার হাইড করুন
+            // Hide after 3 seconds
             clearTimeout(hideControlsTimeout);
             hideControlsTimeout = setTimeout(() => {
               hideControls();
@@ -782,7 +858,7 @@
             controlsVisible = false;
           }
           
-          // কোয়ালিটি কন্ট্রোলারও হাইড করুন
+          // Hide quality controls too
           hideQualityControls();
         }
         
@@ -852,21 +928,10 @@
           }
         });
         
-        // মোবাইল ডিভাইসে orientation change হ্যান্ডলিং
-        window.addEventListener('orientationchange', () => {
-          if (isMobileDevice() && player.fullscreen.active) {
-            setTimeout(() => {
-              if (Math.abs(window.orientation) === 90) {
-                player.elements.container.style.transform = 'rotate(0deg)';
-              }
-            }, 300);
-          }
-        });
-        
         console.log('Video loaded successfully');
         
         // Show video player after loading
-        setTimeout(showVideoPlayer, 300);
+        setTimeout(showVideoPlayer, 500);
         
       } catch (error) {
         console.error('Error loading video:', error);
